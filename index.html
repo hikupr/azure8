@@ -166,10 +166,171 @@ label {
   cursor: pointer;
   color: #7f8c8d;
 }
-.loading {
+
+/* カメラフレーム */
+.camera-frame {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.camera-frame.active {
+  display: flex;
+  flex-direction: column;
+}
+.frame-container {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+}
+.card-guide {
+  position: relative;
+  width: 100%;
+  padding-top: 60.6%;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  background: transparent;
+}
+.corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 4px solid #f39c12;
+}
+.corner-tl {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 12px;
+}
+.corner-tr {
+  top: -3px;
+  right: -3px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 12px;
+}
+.corner-bl {
+  bottom: -3px;
+  left: -3px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+}
+.corner-br {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 12px;
+}
+.frame-instructions {
+  color: white;
   text-align: center;
-  padding: 20px;
-  color: #7f8c8d;
+  margin-top: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.frame-instructions-sub {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-top: 10px;
+}
+.capture-button {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: white;
+  border: 5px solid #f39c12;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.capture-button:active {
+  transform: translateX(-50%) scale(0.95);
+  box-shadow: 0 6px 30px rgba(243, 156, 18, 0.5);
+}
+.capture-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #f39c12;
+}
+.close-frame {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.close-frame:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* トリミング機能 */
+.crop-container {
+  position: relative;
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 20px 0;
+  background: #000;
+}
+.crop-image {
+  width: 100%;
+  display: block;
+}
+.crop-overlay {
+  position: absolute;
+  border: 2px dashed #f39c12;
+  cursor: move;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+.crop-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #f39c12;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+.handle-tl { top: -10px; left: -10px; cursor: nw-resize; }
+.handle-tr { top: -10px; right: -10px; cursor: ne-resize; }
+.handle-bl { bottom: -10px; left: -10px; cursor: sw-resize; }
+.handle-br { bottom: -10px; right: -10px; cursor: se-resize; }
+.crop-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
 }
 </style>
 </head>
@@ -192,17 +353,31 @@ label {
 <div id="add" class="content">
   <div class="card">
     <h3 style="margin-bottom: 20px; color: #2d5a8c; font-size: 18px;">📝 新規登録</h3>
-    <div class="upload-area" onclick="document.getElementById('file').click()">
+    <div class="upload-area" onclick="openCameraFrame()">
       <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
       <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
-      <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">または写真を選択</div>
+      <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">名刺ガイド枠が表示されます</div>
       <input type="file" id="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
     </div>
-    <div id="form" style="display:none; margin-top:25px">
-      <div id="loading" class="loading" style="display:none;">
-        <div style="font-size: 40px; margin-bottom: 10px;">🤖</div>
-        <div>AI が名刺を読み取り中...</div>
+    
+    <div id="cropSection" style="display:none;">
+      <div style="font-weight: 600; margin: 20px 0 10px 0; color: #2d5a8c;">✂️ 画像をトリミング（任意）</div>
+      <div class="crop-container" id="cropContainer">
+        <img id="cropImage" class="crop-image">
+        <div id="cropOverlay" class="crop-overlay">
+          <div class="crop-handle handle-tl"></div>
+          <div class="crop-handle handle-tr"></div>
+          <div class="crop-handle handle-bl"></div>
+          <div class="crop-handle handle-br"></div>
+        </div>
       </div>
+      <div class="crop-buttons">
+        <button class="btn" style="background:#27ae60; flex:1;" onclick="applyCrop()">✓ トリミング適用</button>
+        <button class="btn" style="background:#95a5a6; flex:1;" onclick="skipCrop()">スキップ</button>
+      </div>
+    </div>
+    
+    <div id="form" style="display:none; margin-top:25px">
       <img id="preview" style="width:100%; border-radius:12px; margin-bottom:20px; box-shadow: 0 2px 15px rgba(0,0,0,0.1);">
       
       <label>📅 登録日（名刺交換日）</label>
@@ -245,6 +420,24 @@ label {
   </div>
 </div>
 
+<!-- カメラフレーム -->
+<div id="cameraFrame" class="camera-frame">
+  <button class="close-frame" onclick="closeCameraFrame()">&times;</button>
+  <div class="frame-container">
+    <div class="card-guide">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+    </div>
+    <div class="frame-instructions">
+      📇 名刺を枠内に収めてください
+      <div class="frame-instructions-sub">枠に合わせて撮影するときれいに保存できます</div>
+    </div>
+  </div>
+  <button class="capture-button" onclick="triggerCapture()"></button>
+</div>
+
 <!-- 詳細・編集モーダル -->
 <div id="detailModal" class="modal" onclick="if(event.target === this) closeModal()">
   <div class="modal-content">
@@ -259,6 +452,11 @@ label {
 <script>
 let data = JSON.parse(localStorage.getItem('azure8') || '[]');
 let editingIndex = -1;
+let currentImageData = '';
+let cropData = { x: 0, y: 0, width: 0, height: 0 };
+let isDragging = false;
+let dragHandle = null;
+let dragStart = { x: 0, y: 0 };
 
 document.getElementById('category').addEventListener('change', function() {
   const programField = document.getElementById('programField');
@@ -273,74 +471,185 @@ function showTab(tab) {
   if (tab === 'list') display();
 }
 
-async function handleFile(input) {
+function openCameraFrame() {
+  document.getElementById('cameraFrame').classList.add('active');
+}
+
+function closeCameraFrame() {
+  document.getElementById('cameraFrame').classList.remove('active');
+}
+
+function triggerCapture() {
+  document.getElementById('file').click();
+  closeCameraFrame();
+}
+
+function handleFile(input) {
   if (input.files && input.files[0]) {
     const file = input.files[0];
     const reader = new FileReader();
     
-    reader.onload = async (e) => {
-      const base64 = e.target.result;
-      document.getElementById('preview').src = base64;
-      document.getElementById('form').style.display = 'block';
-      document.getElementById('date').value = new Date().toISOString().split('T')[0];
-      
-      // OCR処理
-      document.getElementById('loading').style.display = 'block';
-      await performOCR(base64.split(',')[1]);
-      document.getElementById('loading').style.display = 'none';
+    reader.onload = (e) => {
+      currentImageData = e.target.result;
+      showCropSection();
     };
     
     reader.readAsDataURL(file);
   }
 }
 
-async function performOCR(base64Image) {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'YOUR_API_KEY_HERE',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1024,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: base64Image
-              }
-            },
-            {
-              type: 'text',
-              text: 'この名刺画像から以下の情報を抽出してください。JSON形式で返答してください:\n{"name": "氏名", "company": "会社名・役職", "phone": "電話番号", "email": "メールアドレス"}\n見つからない項目は空文字にしてください。'
-            }
-          ]
-        }]
-      })
-    });
+function showCropSection() {
+  document.getElementById('cropSection').style.display = 'block';
+  const img = document.getElementById('cropImage');
+  img.src = currentImageData;
+  
+  img.onload = () => {
+    const container = document.getElementById('cropContainer');
+    const rect = container.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    
+    // デフォルトのトリミング範囲（画像全体の80%）
+    const margin = 0.1;
+    cropData = {
+      x: imgRect.width * margin,
+      y: imgRect.height * margin,
+      width: imgRect.width * (1 - margin * 2),
+      height: imgRect.height * (1 - margin * 2)
+    };
+    
+    updateCropOverlay();
+    initCropHandlers();
+  };
+}
 
-    if (response.ok) {
-      const result = await response.json();
-      const text = result.content[0].text;
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const cardInfo = JSON.parse(jsonMatch[0]);
-        document.getElementById('name').value = cardInfo.name || '';
-        document.getElementById('company').value = cardInfo.company || '';
-        document.getElementById('phone').value = cardInfo.phone || '';
-        document.getElementById('email').value = cardInfo.email || '';
-      }
+function updateCropOverlay() {
+  const overlay = document.getElementById('cropOverlay');
+  overlay.style.left = cropData.x + 'px';
+  overlay.style.top = cropData.y + 'px';
+  overlay.style.width = cropData.width + 'px';
+  overlay.style.height = cropData.height + 'px';
+}
+
+function initCropHandlers() {
+  const overlay = document.getElementById('cropOverlay');
+  const handles = overlay.querySelectorAll('.crop-handle');
+  
+  overlay.addEventListener('mousedown', startDrag);
+  overlay.addEventListener('touchstart', startDrag);
+  
+  handles.forEach(handle => {
+    handle.addEventListener('mousedown', (e) => startHandleDrag(e, handle));
+    handle.addEventListener('touchstart', (e) => startHandleDrag(e, handle));
+  });
+  
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('touchmove', drag);
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchend', stopDrag);
+}
+
+function startDrag(e) {
+  if (e.target.classList.contains('crop-handle')) return;
+  isDragging = true;
+  dragHandle = null;
+  const touch = e.touches ? e.touches[0] : e;
+  dragStart = { x: touch.clientX - cropData.x, y: touch.clientY - cropData.y };
+  e.preventDefault();
+}
+
+function startHandleDrag(e, handle) {
+  isDragging = true;
+  dragHandle = handle.className.split(' ')[1];
+  const touch = e.touches ? e.touches[0] : e;
+  dragStart = { x: touch.clientX, y: touch.clientY };
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  
+  const touch = e.touches ? e.touches[0] : e;
+  const img = document.getElementById('cropImage');
+  const imgRect = img.getBoundingClientRect();
+  
+  if (dragHandle) {
+    const dx = touch.clientX - dragStart.x;
+    const dy = touch.clientY - dragStart.y;
+    
+    if (dragHandle === 'handle-br') {
+      cropData.width = Math.max(50, Math.min(cropData.width + dx, imgRect.width - cropData.x));
+      cropData.height = Math.max(50, Math.min(cropData.height + dy, imgRect.height - cropData.y));
+    } else if (dragHandle === 'handle-tl') {
+      const newX = Math.max(0, Math.min(cropData.x + dx, cropData.x + cropData.width - 50));
+      const newY = Math.max(0, Math.min(cropData.y + dy, cropData.y + cropData.height - 50));
+      cropData.width += cropData.x - newX;
+      cropData.height += cropData.y - newY;
+      cropData.x = newX;
+      cropData.y = newY;
+    } else if (dragHandle === 'handle-tr') {
+      const newY = Math.max(0, Math.min(cropData.y + dy, cropData.y + cropData.height - 50));
+      cropData.width = Math.max(50, Math.min(cropData.width + dx, imgRect.width - cropData.x));
+      cropData.height += cropData.y - newY;
+      cropData.y = newY;
+    } else if (dragHandle === 'handle-bl') {
+      const newX = Math.max(0, Math.min(cropData.x + dx, cropData.x + cropData.width - 50));
+      cropData.width += cropData.x - newX;
+      cropData.x = newX;
+      cropData.height = Math.max(50, Math.min(cropData.height + dy, imgRect.height - cropData.y));
     }
-  } catch (error) {
-    console.log('OCR処理をスキップしました');
+    
+    dragStart = { x: touch.clientX, y: touch.clientY };
+  } else {
+    cropData.x = Math.max(0, Math.min(touch.clientX - dragStart.x, imgRect.width - cropData.width));
+    cropData.y = Math.max(0, Math.min(touch.clientY - dragStart.y, imgRect.height - cropData.height));
   }
+  
+  updateCropOverlay();
+  e.preventDefault();
+}
+
+function stopDrag() {
+  isDragging = false;
+  dragHandle = null;
+}
+
+function applyCrop() {
+  const img = document.getElementById('cropImage');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  const scaleX = img.naturalWidth / img.width;
+  const scaleY = img.naturalHeight / img.height;
+  
+  canvas.width = cropData.width * scaleX;
+  canvas.height = cropData.height * scaleY;
+  
+  ctx.drawImage(
+    img,
+    cropData.x * scaleX,
+    cropData.y * scaleY,
+    canvas.width,
+    canvas.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+  
+  currentImageData = canvas.toDataURL('image/jpeg', 0.9);
+  showForm();
+}
+
+function skipCrop() {
+  showForm();
+}
+
+function showForm() {
+  document.getElementById('cropSection').style.display = 'none';
+  document.getElementById('preview').src = currentImageData;
+  document.getElementById('form').style.display = 'block';
+  document.getElementById('date').value = new Date().toISOString().split('T')[0];
 }
 
 function save() {
@@ -361,7 +670,7 @@ function save() {
     phone: document.getElementById('phone').value,
     email: document.getElementById('email').value,
     memo: document.getElementById('memo').value,
-    image: document.getElementById('preview').src,
+    image: currentImageData,
     timestamp: new Date().getTime()
   };
   
@@ -385,6 +694,7 @@ function save() {
   document.getElementById('program').value = '';
   document.getElementById('category').value = '';
   document.getElementById('memo').value = '';
+  currentImageData = '';
   
   closeModal();
   showTab('list');
@@ -442,88 +752,4 @@ function openDetail(i) {
   else if (item.category === '専門誌') badgeClass = 'badge-journal';
   
   document.getElementById('detailContent').innerHTML = `
-    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">` : ''}
-    
-    <label>📂 カテゴリー</label>
-    <select id="editCategory" onchange="document.getElementById('editProgramField').style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none'">
-      <option value="TV" ${item.category === 'TV' ? 'selected' : ''}>📺 TV</option>
-      <option value="新聞" ${item.category === '新聞' ? 'selected' : ''}>📰 新聞</option>
-      <option value="WEB" ${item.category === 'WEB' ? 'selected' : ''}>🌐 WEB</option>
-      <option value="雑誌" ${item.category === '雑誌' ? 'selected' : ''}>📖 雑誌</option>
-      <option value="ラジオ" ${item.category === 'ラジオ' ? 'selected' : ''}>📻 ラジオ</option>
-      <option value="Youtube" ${item.category === 'Youtube' ? 'selected' : ''}>▶️ Youtube</option>
-      <option value="専門誌" ${item.category === '専門誌' ? 'selected' : ''}>📚 専門誌</option>
-    </select>
-    
-    <div id="editProgramField" style="display:${(item.category === 'TV' || item.category === 'ラジオ' || item.category === 'Youtube') ? 'block' : 'none'};">
-      <label>📺 番組名</label>
-      <input type="text" id="editProgram" value="${item.program || ''}" placeholder="番組名を入力">
-    </div>
-    
-    <label>📅 登録日</label>
-    <input type="date" id="editDate" value="${item.date}">
-    
-    <label>👤 名前</label>
-    <input type="text" id="editName" value="${item.name}">
-    
-    <label>🏢 会社名・役職</label>
-    <input type="text" id="editCompany" value="${item.company || ''}">
-    
-    <label>📞 電話番号</label>
-    <input type="tel" id="editPhone" value="${item.phone || ''}">
-    
-    <label>✉️ メールアドレス</label>
-    <input type="email" id="editEmail" value="${item.email || ''}">
-    
-    <label>📝 メモ</label>
-    <textarea id="editMemo">${item.memo || ''}</textarea>
-    
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px;">📞 電話</a>` : ''}
-      ${item.email ? `<a href="mailto:${item.email}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px; background:#27ae60;">✉️ メール</a>` : ''}
-    </div>
-    
-    <button class="btn" onclick="updateItem()">💾 更新</button>
-    <button class="btn" style="background:#e74c3c;" onclick="deleteItem(${i})">🗑️ 削除</button>
-  `;
-  
-  document.getElementById('detailModal').classList.add('active');
-}
-
-function updateItem() {
-  const item = data[editingIndex];
-  
-  item.category = document.getElementById('editCategory').value;
-  item.program = document.getElementById('editProgram') ? document.getElementById('editProgram').value : '';
-  item.date = document.getElementById('editDate').value;
-  item.name = document.getElementById('editName').value;
-  item.company = document.getElementById('editCompany').value;
-  item.phone = document.getElementById('editPhone').value;
-  item.email = document.getElementById('editEmail').value;
-  item.memo = document.getElementById('editMemo').value;
-  
-  localStorage.setItem('azure8', JSON.stringify(data));
-  alert('✅ 更新しました！');
-  closeModal();
-  display();
-}
-
-function deleteItem(i) {
-  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
-    data.splice(i, 1);
-    localStorage.setItem('azure8', JSON.stringify(data));
-    alert('✅ 削除しました');
-    closeModal();
-    display();
-  }
-}
-
-function closeModal() {
-  document.getElementById('detailModal').classList.remove('active');
-  editingIndex = -1;
-}
-
-display();
-</script>
-</body>
-</html>
+    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">
