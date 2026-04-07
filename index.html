@@ -53,10 +53,12 @@ h1 { font-size: 1.8rem; font-weight: 700; }
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   margin-bottom: 15px;
+}
+.list-card {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.card:hover {
+.list-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
@@ -73,6 +75,7 @@ h1 { font-size: 1.8rem; font-weight: 700; }
   font-weight: 600;
   box-shadow: 0 2px 10px rgba(45, 90, 140, 0.2);
   transition: all 0.3s ease;
+  touch-action: manipulation;
 }
 .btn:active { 
   background: #1e3d5f;
@@ -290,47 +293,10 @@ label {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  z-index: 3000;
 }
 .close-frame:active {
   background: rgba(255, 255, 255, 0.3);
-}
-
-/* トリミング機能 */
-.crop-container {
-  position: relative;
-  width: 100%;
-  max-height: 400px;
-  overflow: hidden;
-  border-radius: 12px;
-  margin: 20px 0;
-  background: #000;
-}
-.crop-image {
-  width: 100%;
-  display: block;
-}
-.crop-overlay {
-  position: absolute;
-  border: 2px dashed #f39c12;
-  cursor: move;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-}
-.crop-handle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: #f39c12;
-  border: 2px solid white;
-  border-radius: 50%;
-}
-.handle-tl { top: -10px; left: -10px; cursor: nw-resize; }
-.handle-tr { top: -10px; right: -10px; cursor: ne-resize; }
-.handle-bl { bottom: -10px; left: -10px; cursor: sw-resize; }
-.handle-br { bottom: -10px; right: -10px; cursor: se-resize; }
-.crop-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
 }
 </style>
 </head>
@@ -358,23 +324,6 @@ label {
       <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
       <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">名刺ガイド枠が表示されます</div>
       <input type="file" id="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
-    </div>
-    
-    <div id="cropSection" style="display:none;">
-      <div style="font-weight: 600; margin: 20px 0 10px 0; color: #2d5a8c;">✂️ 画像をトリミング（任意）</div>
-      <div class="crop-container" id="cropContainer">
-        <img id="cropImage" class="crop-image">
-        <div id="cropOverlay" class="crop-overlay">
-          <div class="crop-handle handle-tl"></div>
-          <div class="crop-handle handle-tr"></div>
-          <div class="crop-handle handle-bl"></div>
-          <div class="crop-handle handle-br"></div>
-        </div>
-      </div>
-      <div class="crop-buttons">
-        <button class="btn" style="background:#27ae60; flex:1;" onclick="applyCrop()">✓ トリミング適用</button>
-        <button class="btn" style="background:#95a5a6; flex:1;" onclick="skipCrop()">スキップ</button>
-      </div>
     </div>
     
     <div id="form" style="display:none; margin-top:25px">
@@ -415,7 +364,7 @@ label {
       <label>📝 メモ</label>
       <textarea id="memo" placeholder="メモを入力"></textarea>
       
-      <button class="btn" onclick="save()">💾 保存する</button>
+      <button class="btn" onclick="saveCard()">💾 保存する</button>
     </div>
   </div>
 </div>
@@ -453,10 +402,6 @@ label {
 let data = JSON.parse(localStorage.getItem('azure8') || '[]');
 let editingIndex = -1;
 let currentImageData = '';
-let cropData = { x: 0, y: 0, width: 0, height: 0 };
-let isDragging = false;
-let dragHandle = null;
-let dragStart = { x: 0, y: 0 };
 
 document.getElementById('category').addEventListener('change', function() {
   const programField = document.getElementById('programField');
@@ -491,168 +436,16 @@ function handleFile(input) {
     
     reader.onload = (e) => {
       currentImageData = e.target.result;
-      showCropSection();
+      document.getElementById('preview').src = currentImageData;
+      document.getElementById('form').style.display = 'block';
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
     };
     
     reader.readAsDataURL(file);
   }
 }
 
-function showCropSection() {
-  document.getElementById('cropSection').style.display = 'block';
-  const img = document.getElementById('cropImage');
-  img.src = currentImageData;
-  
-  img.onload = () => {
-    const container = document.getElementById('cropContainer');
-    const rect = container.getBoundingClientRect();
-    const imgRect = img.getBoundingClientRect();
-    
-    // デフォルトのトリミング範囲（画像全体の80%）
-    const margin = 0.1;
-    cropData = {
-      x: imgRect.width * margin,
-      y: imgRect.height * margin,
-      width: imgRect.width * (1 - margin * 2),
-      height: imgRect.height * (1 - margin * 2)
-    };
-    
-    updateCropOverlay();
-    initCropHandlers();
-  };
-}
-
-function updateCropOverlay() {
-  const overlay = document.getElementById('cropOverlay');
-  overlay.style.left = cropData.x + 'px';
-  overlay.style.top = cropData.y + 'px';
-  overlay.style.width = cropData.width + 'px';
-  overlay.style.height = cropData.height + 'px';
-}
-
-function initCropHandlers() {
-  const overlay = document.getElementById('cropOverlay');
-  const handles = overlay.querySelectorAll('.crop-handle');
-  
-  overlay.addEventListener('mousedown', startDrag);
-  overlay.addEventListener('touchstart', startDrag);
-  
-  handles.forEach(handle => {
-    handle.addEventListener('mousedown', (e) => startHandleDrag(e, handle));
-    handle.addEventListener('touchstart', (e) => startHandleDrag(e, handle));
-  });
-  
-  document.addEventListener('mousemove', drag);
-  document.addEventListener('touchmove', drag);
-  document.addEventListener('mouseup', stopDrag);
-  document.addEventListener('touchend', stopDrag);
-}
-
-function startDrag(e) {
-  if (e.target.classList.contains('crop-handle')) return;
-  isDragging = true;
-  dragHandle = null;
-  const touch = e.touches ? e.touches[0] : e;
-  dragStart = { x: touch.clientX - cropData.x, y: touch.clientY - cropData.y };
-  e.preventDefault();
-}
-
-function startHandleDrag(e, handle) {
-  isDragging = true;
-  dragHandle = handle.className.split(' ')[1];
-  const touch = e.touches ? e.touches[0] : e;
-  dragStart = { x: touch.clientX, y: touch.clientY };
-  e.stopPropagation();
-  e.preventDefault();
-}
-
-function drag(e) {
-  if (!isDragging) return;
-  
-  const touch = e.touches ? e.touches[0] : e;
-  const img = document.getElementById('cropImage');
-  const imgRect = img.getBoundingClientRect();
-  
-  if (dragHandle) {
-    const dx = touch.clientX - dragStart.x;
-    const dy = touch.clientY - dragStart.y;
-    
-    if (dragHandle === 'handle-br') {
-      cropData.width = Math.max(50, Math.min(cropData.width + dx, imgRect.width - cropData.x));
-      cropData.height = Math.max(50, Math.min(cropData.height + dy, imgRect.height - cropData.y));
-    } else if (dragHandle === 'handle-tl') {
-      const newX = Math.max(0, Math.min(cropData.x + dx, cropData.x + cropData.width - 50));
-      const newY = Math.max(0, Math.min(cropData.y + dy, cropData.y + cropData.height - 50));
-      cropData.width += cropData.x - newX;
-      cropData.height += cropData.y - newY;
-      cropData.x = newX;
-      cropData.y = newY;
-    } else if (dragHandle === 'handle-tr') {
-      const newY = Math.max(0, Math.min(cropData.y + dy, cropData.y + cropData.height - 50));
-      cropData.width = Math.max(50, Math.min(cropData.width + dx, imgRect.width - cropData.x));
-      cropData.height += cropData.y - newY;
-      cropData.y = newY;
-    } else if (dragHandle === 'handle-bl') {
-      const newX = Math.max(0, Math.min(cropData.x + dx, cropData.x + cropData.width - 50));
-      cropData.width += cropData.x - newX;
-      cropData.x = newX;
-      cropData.height = Math.max(50, Math.min(cropData.height + dy, imgRect.height - cropData.y));
-    }
-    
-    dragStart = { x: touch.clientX, y: touch.clientY };
-  } else {
-    cropData.x = Math.max(0, Math.min(touch.clientX - dragStart.x, imgRect.width - cropData.width));
-    cropData.y = Math.max(0, Math.min(touch.clientY - dragStart.y, imgRect.height - cropData.height));
-  }
-  
-  updateCropOverlay();
-  e.preventDefault();
-}
-
-function stopDrag() {
-  isDragging = false;
-  dragHandle = null;
-}
-
-function applyCrop() {
-  const img = document.getElementById('cropImage');
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  
-  const scaleX = img.naturalWidth / img.width;
-  const scaleY = img.naturalHeight / img.height;
-  
-  canvas.width = cropData.width * scaleX;
-  canvas.height = cropData.height * scaleY;
-  
-  ctx.drawImage(
-    img,
-    cropData.x * scaleX,
-    cropData.y * scaleY,
-    canvas.width,
-    canvas.height,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-  
-  currentImageData = canvas.toDataURL('image/jpeg', 0.9);
-  showForm();
-}
-
-function skipCrop() {
-  showForm();
-}
-
-function showForm() {
-  document.getElementById('cropSection').style.display = 'none';
-  document.getElementById('preview').src = currentImageData;
-  document.getElementById('form').style.display = 'block';
-  document.getElementById('date').value = new Date().toISOString().split('T')[0];
-}
-
-function save() {
+function saveCard() {
   const name = document.getElementById('name').value;
   const category = document.getElementById('category').value;
   
@@ -685,6 +478,7 @@ function save() {
   
   localStorage.setItem('azure8', JSON.stringify(data));
   
+  // フォームをリセット
   document.getElementById('form').style.display = 'none';
   document.getElementById('file').value = '';
   document.getElementById('name').value = '';
@@ -727,7 +521,7 @@ function display() {
     else if (item.category === '専門誌') badgeClass = 'badge-journal';
     
     return `
-      <div class="card" onclick="openDetail(${i})">
+      <div class="card list-card" onclick="openDetail(${i})">
         <span class="category-badge ${badgeClass}">${item.category}</span>
         ${item.program ? `<div style="color: #f39c12; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📺 ${item.program}</div>` : ''}
         <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 5px;">${item.name}</div>
@@ -742,14 +536,89 @@ function openDetail(i) {
   const item = data[i];
   editingIndex = i;
   
-  let badgeClass = '';
-  if (item.category === 'TV') badgeClass = 'badge-tv';
-  else if (item.category === '新聞') badgeClass = 'badge-newspaper';
-  else if (item.category === 'WEB') badgeClass = 'badge-web';
-  else if (item.category === '雑誌') badgeClass = 'badge-magazine';
-  else if (item.category === 'ラジオ') badgeClass = 'badge-radio';
-  else if (item.category === 'Youtube') badgeClass = 'badge-youtube';
-  else if (item.category === '専門誌') badgeClass = 'badge-journal';
-  
   document.getElementById('detailContent').innerHTML = `
-    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">
+    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">` : ''}
+    
+    <label>📂 カテゴリー</label>
+    <select id="editCategory" onchange="document.getElementById('editProgramField').style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none'">
+      <option value="TV" ${item.category === 'TV' ? 'selected' : ''}>📺 TV</option>
+      <option value="新聞" ${item.category === '新聞' ? 'selected' : ''}>📰 新聞</option>
+      <option value="WEB" ${item.category === 'WEB' ? 'selected' : ''}>🌐 WEB</option>
+      <option value="雑誌" ${item.category === '雑誌' ? 'selected' : ''}>📖 雑誌</option>
+      <option value="ラジオ" ${item.category === 'ラジオ' ? 'selected' : ''}>📻 ラジオ</option>
+      <option value="Youtube" ${item.category === 'Youtube' ? 'selected' : ''}>▶️ Youtube</option>
+      <option value="専門誌" ${item.category === '専門誌' ? 'selected' : ''}>📚 専門誌</option>
+    </select>
+    
+    <div id="editProgramField" style="display:${(item.category === 'TV' || item.category === 'ラジオ' || item.category === 'Youtube') ? 'block' : 'none'};">
+      <label>📺 番組名</label>
+      <input type="text" id="editProgram" value="${item.program || ''}" placeholder="番組名を入力">
+    </div>
+    
+    <label>📅 登録日</label>
+    <input type="date" id="editDate" value="${item.date}">
+    
+    <label>👤 名前</label>
+    <input type="text" id="editName" value="${item.name}">
+    
+    <label>🏢 会社名・役職</label>
+    <input type="text" id="editCompany" value="${item.company || ''}">
+    
+    <label>📞 電話番号</label>
+    <input type="tel" id="editPhone" value="${item.phone || ''}">
+    
+    <label>✉️ メールアドレス</label>
+    <input type="email" id="editEmail" value="${item.email || ''}">
+    
+    <label>📝 メモ</label>
+    <textarea id="editMemo">${item.memo || ''}</textarea>
+    
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px;">📞 電話</a>` : ''}
+      ${item.email ? `<a href="mailto:${item.email}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px; background:#27ae60;">✉️ メール</a>` : ''}
+    </div>
+    
+    <button class="btn" onclick="updateItem()">💾 更新</button>
+    <button class="btn" style="background:#e74c3c;" onclick="deleteItem(${i})">🗑️ 削除</button>
+  `;
+  
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function updateItem() {
+  const item = data[editingIndex];
+  
+  item.category = document.getElementById('editCategory').value;
+  item.program = document.getElementById('editProgram') ? document.getElementById('editProgram').value : '';
+  item.date = document.getElementById('editDate').value;
+  item.name = document.getElementById('editName').value;
+  item.company = document.getElementById('editCompany').value;
+  item.phone = document.getElementById('editPhone').value;
+  item.email = document.getElementById('editEmail').value;
+  item.memo = document.getElementById('editMemo').value;
+  
+  localStorage.setItem('azure8', JSON.stringify(data));
+  alert('✅ 更新しました！');
+  closeModal();
+  display();
+}
+
+function deleteItem(i) {
+  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
+    data.splice(i, 1);
+    localStorage.setItem('azure8', JSON.stringify(data));
+    alert('✅ 削除しました');
+    closeModal();
+    display();
+  }
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('active');
+  editingIndex = -1;
+}
+
+display();
+</script>
+</body>
+</html>
