@@ -1,624 +1,231 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Azure8</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  padding: 15px;
-  min-height: 100vh;
-}
-.header {
-  background: linear-gradient(135deg, #2d5a8c 0%, #1e3d5f 100%);
-  color: white;
-  padding: 25px;
-  border-radius: 15px;
-  margin-bottom: 20px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(45, 90, 140, 0.3);
-}
-h1 { font-size: 1.8rem; font-weight: 700; }
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.tab {
-  flex: 1;
-  padding: 14px;
-  border: none;
-  background: white;
-  border-radius: 10px;
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-.tab.active {
-  background: #2d5a8c;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(45, 90, 140, 0.3);
-}
-.content { display: none; }
-.content.active { display: block; }
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  margin-bottom: 15px;
-}
-.list-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-.list-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-.btn {
-  padding: 14px 20px;
-  background: #2d5a8c;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 10px;
-  font-weight: 600;
-  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.2);
-  transition: all 0.3s ease;
-  touch-action: manipulation;
-}
-.btn:active { 
-  background: #1e3d5f;
-  transform: scale(0.98);
-}
-input, select, textarea {
-  width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e6ed;
-  border-radius: 10px;
-  font-size: 15px;
-  margin: 8px 0 15px 0;
-  transition: border 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #2d5a8c;
-}
-.upload-area {
-  border: 3px dashed #e0e6ed;
-  border-radius: 12px;
-  padding: 60px 20px;
-  text-align: center;
-  background: #f8f9fa;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-.upload-area:active {
-  background: #e8ecf1;
-  border-color: #2d5a8c;
-}
-label {
-  display: block;
-  font-weight: 600;
-  margin-top: 15px;
-  font-size: 14px;
-  color: #2c3e50;
-}
-.category-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-.badge-tv { background: #e74c3c; color: white; }
-.badge-newspaper { background: #3498db; color: white; }
-.badge-web { background: #2ecc71; color: white; }
-.badge-magazine { background: #9b59b6; color: white; }
-.badge-radio { background: #e67e22; color: white; }
-.badge-youtube { background: #c0392b; color: white; }
-.badge-journal { background: #16a085; color: white; }
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-  overflow-y: auto;
-}
-.modal.active { display: block; }
-.modal-content {
-  background: white;
-  margin: 20px auto;
-  padding: 30px;
-  border-radius: 15px;
-  max-width: 600px;
-  width: 90%;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 30px;
-  cursor: pointer;
-  color: #7f8c8d;
-}
+// Azure8 用 Google Apps Script
+// スプレッドシートID: 15XO-aqOmiQHTaXp81tExFoD6pAZXCNFF65bnfW5l6Gg
 
-/* カメラフレーム */
-.camera-frame {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  z-index: 2000;
-  align-items: center;
-  justify-content: center;
-}
-.camera-frame.active {
-  display: flex;
-  flex-direction: column;
-}
-.frame-container {
-  position: relative;
-  width: 90%;
-  max-width: 500px;
-}
-.card-guide {
-  position: relative;
-  width: 100%;
-  padding-top: 60.6%;
-  border: 3px solid #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-  background: transparent;
-}
-.corner {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border: 4px solid #f39c12;
-}
-.corner-tl {
-  top: -3px;
-  left: -3px;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: 12px;
-}
-.corner-tr {
-  top: -3px;
-  right: -3px;
-  border-left: none;
-  border-bottom: none;
-  border-top-right-radius: 12px;
-}
-.corner-bl {
-  bottom: -3px;
-  left: -3px;
-  border-right: none;
-  border-top: none;
-  border-bottom-left-radius: 12px;
-}
-.corner-br {
-  bottom: -3px;
-  right: -3px;
-  border-left: none;
-  border-top: none;
-  border-bottom-right-radius: 12px;
-}
-.frame-instructions {
-  color: white;
-  text-align: center;
-  margin-top: 30px;
-  font-size: 16px;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-.frame-instructions-sub {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  margin-top: 10px;
-}
-.capture-button {
-  position: fixed;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: white;
-  border: 5px solid #f39c12;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.capture-button:active {
-  transform: translateX(-50%) scale(0.95);
-  box-shadow: 0 6px 30px rgba(243, 156, 18, 0.5);
-}
-.capture-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #f39c12;
-}
-.close-frame {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid white;
-  border-radius: 50%;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  z-index: 3000;
-}
-.close-frame:active {
-  background: rgba(255, 255, 255, 0.3);
-}
-</style>
-</head>
-<body>
+const SPREADSHEET_ID = '15XO-aqOmiQHTaXp81tExFoD6pAZXCNFF65bnfW5l6Gg';
+const ALLOWED_EMAIL = 'your-email@gmail.com'; // ← あなたのGmailアドレスに変更
 
-<div class="header">
-  <h1>🔷 Azure8</h1>
-  <div style="font-size: 14px; margin-top: 5px; opacity: 0.9;">個人情報管理アプリ</div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="showTab('list')">📋 一覧</button>
-  <button class="tab" onclick="showTab('add')">➕ 登録</button>
-</div>
-
-<div id="list" class="content active">
-  <div id="cards"></div>
-</div>
-
-<div id="add" class="content">
-  <div class="card">
-    <h3 style="margin-bottom: 20px; color: #2d5a8c; font-size: 18px;">📝 新規登録</h3>
-    <div class="upload-area" onclick="openCameraFrame()">
-      <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
-      <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
-      <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">名刺ガイド枠が表示されます</div>
-      <input type="file" id="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
-    </div>
+function doPost(e) {
+  try {
+    // セキュリティチェック
+    const userEmail = Session.getActiveUser().getEmail();
+    if (userEmail !== ALLOWED_EMAIL) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ error: 'Unauthorized' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
     
-    <div id="form" style="display:none; margin-top:25px">
-      <img id="preview" style="width:100%; border-radius:12px; margin-bottom:20px; box-shadow: 0 2px 15px rgba(0,0,0,0.1);">
-      
-      <label>📅 登録日（名刺交換日）</label>
-      <input type="date" id="date">
-      
-      <label>📂 カテゴリー</label>
-      <select id="category">
-        <option value="">選択してください</option>
-        <option value="TV">📺 TV</option>
-        <option value="新聞">📰 新聞</option>
-        <option value="WEB">🌐 WEB</option>
-        <option value="雑誌">📖 雑誌</option>
-        <option value="ラジオ">📻 ラジオ</option>
-        <option value="Youtube">▶️ Youtube</option>
-        <option value="専門誌">📚 専門誌</option>
-      </select>
-      
-      <div id="programField" style="display:none;">
-        <label>📺 番組名</label>
-        <input type="text" id="program" placeholder="番組名を入力">
-      </div>
-      
-      <label>👤 名前</label>
-      <input type="text" id="name" placeholder="山田 太郎">
-      
-      <label>🏢 会社名・役職</label>
-      <input type="text" id="company" placeholder="株式会社〇〇 営業部">
-      
-      <label>📞 電話番号</label>
-      <input type="tel" id="phone" placeholder="03-1234-5678">
-      
-      <label>✉️ メールアドレス</label>
-      <input type="email" id="email" placeholder="example@company.com">
-      
-      <label>📝 メモ</label>
-      <textarea id="memo" placeholder="メモを入力"></textarea>
-      
-      <button class="btn" onclick="saveCard()">💾 保存する</button>
-    </div>
-  </div>
-</div>
-
-<!-- カメラフレーム -->
-<div id="cameraFrame" class="camera-frame">
-  <button class="close-frame" onclick="closeCameraFrame()">&times;</button>
-  <div class="frame-container">
-    <div class="card-guide">
-      <div class="corner corner-tl"></div>
-      <div class="corner corner-tr"></div>
-      <div class="corner corner-bl"></div>
-      <div class="corner corner-br"></div>
-    </div>
-    <div class="frame-instructions">
-      📇 名刺を枠内に収めてください
-      <div class="frame-instructions-sub">枠に合わせて撮影するときれいに保存できます</div>
-    </div>
-  </div>
-  <button class="capture-button" onclick="triggerCapture()"></button>
-</div>
-
-<!-- 詳細・編集モーダル -->
-<div id="detailModal" class="modal" onclick="if(event.target === this) closeModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 style="color: #2d5a8c;">詳細・編集</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
-    </div>
-    <div id="detailContent"></div>
-  </div>
-</div>
-
-<script>
-let data = JSON.parse(localStorage.getItem('azure8') || '[]');
-let editingIndex = -1;
-let currentImageData = '';
-
-document.getElementById('category').addEventListener('change', function() {
-  const programField = document.getElementById('programField');
-  programField.style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none';
-});
-
-function showTab(tab) {
-  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  event.target.classList.add('active');
-  if (tab === 'list') display();
-}
-
-function openCameraFrame() {
-  document.getElementById('cameraFrame').classList.add('active');
-}
-
-function closeCameraFrame() {
-  document.getElementById('cameraFrame').classList.remove('active');
-}
-
-function triggerCapture() {
-  document.getElementById('file').click();
-  closeCameraFrame();
-}
-
-function handleFile(input) {
-  if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
+    const requestData = JSON.parse(e.postData.contents);
+    const action = requestData.action || 'add';
     
-    reader.onload = (e) => {
-      currentImageData = e.target.result;
-      document.getElementById('preview').src = currentImageData;
-      document.getElementById('form').style.display = 'block';
-      document.getElementById('date').value = new Date().toISOString().split('T')[0];
-    };
+    if (action === 'add') {
+      return addCard(requestData.data);
+    } else if (action === 'update') {
+      return updateCard(requestData.data);
+    } else if (action === 'delete') {
+      return deleteCard(requestData.data);
+    } else if (action === 'getData') {
+      return getAllCards();
+    }
     
-    reader.readAsDataURL(file);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: true })
+    ).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    Logger.log('Error: ' + error.toString());
+    return ContentService.createTextOutput(
+      JSON.stringify({ error: error.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-function saveCard() {
-  const name = document.getElementById('name').value;
-  const category = document.getElementById('category').value;
+function doGet(e) {
+  try {
+    const userEmail = Session.getActiveUser().getEmail();
+    if (userEmail !== ALLOWED_EMAIL) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ error: 'Unauthorized' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    return getAllCards();
+  } catch (error) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ error: error.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function addCard(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet;
   
-  if (!name || !category) {
-    alert('⚠️ 名前とカテゴリーは必須です');
-    return;
+  // カテゴリー別にシートを作成
+  const sheetName = data.category;
+  sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    // シートが存在しない場合は作成
+    sheet = ss.insertSheet(sheetName);
+    
+    // ヘッダー行を追加
+    sheet.appendRow([
+      '登録日',
+      'カテゴリー',
+      '番組名',
+      '媒体名',
+      '名前',
+      '会社名・役職',
+      '電話番号',
+      'メールアドレス',
+      'メモ',
+      'タイムスタンプ'
+    ]);
+    
+    // ヘッダー行のスタイル設定
+    const headerRange = sheet.getRange(1, 1, 1, 10);
+    headerRange.setBackground('#2d5a8c');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+    headerRange.setHorizontalAlignment('center');
   }
   
-  const item = {
-    date: document.getElementById('date').value,
-    category: category,
-    program: document.getElementById('program').value,
-    name: name,
-    company: document.getElementById('company').value,
-    phone: document.getElementById('phone').value,
-    email: document.getElementById('email').value,
-    memo: document.getElementById('memo').value,
-    image: currentImageData,
-    timestamp: new Date().getTime()
+  // データを追加
+  sheet.appendRow([
+    data.date || '',
+    data.category || '',
+    data.program || '',
+    data.media || '',
+    data.name || '',
+    data.company || '',
+    data.phone || '',
+    data.email || '',
+    data.memo || '',
+    new Date().toISOString()
+  ]);
+  
+  // 列幅を自動調整
+  for (let i = 1; i <= 10; i++) {
+    sheet.autoResizeColumn(i);
+  }
+  
+  return ContentService.createTextOutput(
+    JSON.stringify({ success: true, message: 'データを保存しました' })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function updateCard(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(data.category);
+  
+  if (!sheet) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ error: 'Sheet not found' })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  
+  // 名前で検索して更新
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][4] === data.name) { // 5列目（名前）
+      sheet.getRange(i + 1, 1).setValue(data.date || '');
+      sheet.getRange(i + 1, 2).setValue(data.category || '');
+      sheet.getRange(i + 1, 3).setValue(data.program || '');
+      sheet.getRange(i + 1, 4).setValue(data.media || '');
+      sheet.getRange(i + 1, 5).setValue(data.name || '');
+      sheet.getRange(i + 1, 6).setValue(data.company || '');
+      sheet.getRange(i + 1, 7).setValue(data.phone || '');
+      sheet.getRange(i + 1, 8).setValue(data.email || '');
+      sheet.getRange(i + 1, 9).setValue(data.memo || '');
+      sheet.getRange(i + 1, 10).setValue(new Date().toISOString());
+      break;
+    }
+  }
+  
+  return ContentService.createTextOutput(
+    JSON.stringify({ success: true, message: '更新しました' })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function deleteCard(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(data.category);
+  
+  if (!sheet) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ error: 'Sheet not found' })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  
+  // 名前と登録日で検索して削除
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][4] === data.name && values[i][0] === data.date) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+  
+  return ContentService.createTextOutput(
+    JSON.stringify({ success: true, message: '削除しました' })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getAllCards() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheets = ss.getSheets();
+  const allCards = [];
+  
+  sheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    
+    // システムシートをスキップ
+    if (sheetName.startsWith('Sheet')) return;
+    
+    const data = sheet.getDataRange().getValues();
+    
+    // ヘッダー行をスキップ
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][4]) { // 名前が入力されている行のみ
+        allCards.push({
+          date: data[i][0],
+          category: data[i][1],
+          program: data[i][2],
+          media: data[i][3],
+          name: data[i][4],
+          company: data[i][5],
+          phone: data[i][6],
+          email: data[i][7],
+          memo: data[i][8],
+          timestamp: data[i][9]
+        });
+      }
+    }
+  });
+  
+  return ContentService.createTextOutput(
+    JSON.stringify(allCards)
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+// テスト用関数
+function testAddCard() {
+  const testData = {
+    date: '2025-04-07',
+    category: 'TV',
+    program: 'ニュース23',
+    media: 'TBS',
+    name: 'テスト太郎',
+    company: 'テスト株式会社',
+    phone: '03-1234-5678',
+    email: 'test@example.com',
+    memo: 'テストメモ'
   };
   
-  if (editingIndex >= 0) {
-    data[editingIndex] = item;
-    editingIndex = -1;
-    alert('✅ 更新しました！');
-  } else {
-    data.push(item);
-    alert('✅ 保存しました！');
-  }
-  
-  localStorage.setItem('azure8', JSON.stringify(data));
-  
-  // フォームをリセット
-  document.getElementById('form').style.display = 'none';
-  document.getElementById('file').value = '';
-  document.getElementById('name').value = '';
-  document.getElementById('company').value = '';
-  document.getElementById('phone').value = '';
-  document.getElementById('email').value = '';
-  document.getElementById('program').value = '';
-  document.getElementById('category').value = '';
-  document.getElementById('memo').value = '';
-  currentImageData = '';
-  
-  closeModal();
-  showTab('list');
+  addCard(testData);
+  Logger.log('テストデータを追加しました');
 }
-
-function display() {
-  const cards = document.getElementById('cards');
-  
-  if (data.length === 0) {
-    cards.innerHTML = `
-      <div style="text-align:center; padding:80px 20px;">
-        <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;">📭</div>
-        <div style="color:#999; font-size:16px; font-weight: 500;">まだデータがありません</div>
-        <div style="color:#bbb; font-size:14px; margin-top: 10px;">「➕ 登録」から追加してください</div>
-      </div>
-    `;
-    return;
-  }
-  
-  data.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  
-  cards.innerHTML = data.map((item, i) => {
-    let badgeClass = '';
-    if (item.category === 'TV') badgeClass = 'badge-tv';
-    else if (item.category === '新聞') badgeClass = 'badge-newspaper';
-    else if (item.category === 'WEB') badgeClass = 'badge-web';
-    else if (item.category === '雑誌') badgeClass = 'badge-magazine';
-    else if (item.category === 'ラジオ') badgeClass = 'badge-radio';
-    else if (item.category === 'Youtube') badgeClass = 'badge-youtube';
-    else if (item.category === '専門誌') badgeClass = 'badge-journal';
-    
-    return `
-      <div class="card list-card" onclick="openDetail(${i})">
-        <span class="category-badge ${badgeClass}">${item.category}</span>
-        ${item.program ? `<div style="color: #f39c12; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📺 ${item.program}</div>` : ''}
-        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 5px;">${item.name}</div>
-        <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 10px;">${item.company || ''}</div>
-        ${item.date ? `<div style="color: #95a5a6; font-size: 13px;">📅 ${item.date}</div>` : ''}
-      </div>
-    `;
-  }).join('');
-}
-
-function openDetail(i) {
-  const item = data[i];
-  editingIndex = i;
-  
-  document.getElementById('detailContent').innerHTML = `
-    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">` : ''}
-    
-    <label>📂 カテゴリー</label>
-    <select id="editCategory" onchange="document.getElementById('editProgramField').style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none'">
-      <option value="TV" ${item.category === 'TV' ? 'selected' : ''}>📺 TV</option>
-      <option value="新聞" ${item.category === '新聞' ? 'selected' : ''}>📰 新聞</option>
-      <option value="WEB" ${item.category === 'WEB' ? 'selected' : ''}>🌐 WEB</option>
-      <option value="雑誌" ${item.category === '雑誌' ? 'selected' : ''}>📖 雑誌</option>
-      <option value="ラジオ" ${item.category === 'ラジオ' ? 'selected' : ''}>📻 ラジオ</option>
-      <option value="Youtube" ${item.category === 'Youtube' ? 'selected' : ''}>▶️ Youtube</option>
-      <option value="専門誌" ${item.category === '専門誌' ? 'selected' : ''}>📚 専門誌</option>
-    </select>
-    
-    <div id="editProgramField" style="display:${(item.category === 'TV' || item.category === 'ラジオ' || item.category === 'Youtube') ? 'block' : 'none'};">
-      <label>📺 番組名</label>
-      <input type="text" id="editProgram" value="${item.program || ''}" placeholder="番組名を入力">
-    </div>
-    
-    <label>📅 登録日</label>
-    <input type="date" id="editDate" value="${item.date}">
-    
-    <label>👤 名前</label>
-    <input type="text" id="editName" value="${item.name}">
-    
-    <label>🏢 会社名・役職</label>
-    <input type="text" id="editCompany" value="${item.company || ''}">
-    
-    <label>📞 電話番号</label>
-    <input type="tel" id="editPhone" value="${item.phone || ''}">
-    
-    <label>✉️ メールアドレス</label>
-    <input type="email" id="editEmail" value="${item.email || ''}">
-    
-    <label>📝 メモ</label>
-    <textarea id="editMemo">${item.memo || ''}</textarea>
-    
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px;">📞 電話</a>` : ''}
-      ${item.email ? `<a href="mailto:${item.email}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px; background:#27ae60;">✉️ メール</a>` : ''}
-    </div>
-    
-    <button class="btn" onclick="updateItem()">💾 更新</button>
-    <button class="btn" style="background:#e74c3c;" onclick="deleteItem(${i})">🗑️ 削除</button>
-  `;
-  
-  document.getElementById('detailModal').classList.add('active');
-}
-
-function updateItem() {
-  const item = data[editingIndex];
-  
-  item.category = document.getElementById('editCategory').value;
-  item.program = document.getElementById('editProgram') ? document.getElementById('editProgram').value : '';
-  item.date = document.getElementById('editDate').value;
-  item.name = document.getElementById('editName').value;
-  item.company = document.getElementById('editCompany').value;
-  item.phone = document.getElementById('editPhone').value;
-  item.email = document.getElementById('editEmail').value;
-  item.memo = document.getElementById('editMemo').value;
-  
-  localStorage.setItem('azure8', JSON.stringify(data));
-  alert('✅ 更新しました！');
-  closeModal();
-  display();
-}
-
-function deleteItem(i) {
-  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
-    data.splice(i, 1);
-    localStorage.setItem('azure8', JSON.stringify(data));
-    alert('✅ 削除しました');
-    closeModal();
-    display();
-  }
-}
-
-function closeModal() {
-  document.getElementById('detailModal').classList.remove('active');
-  editingIndex = -1;
-}
-
-display();
-</script>
-</body>
-</html>
