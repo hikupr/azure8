@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure8</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding: 15px;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #2d5a8c 0%, #1e3d5f 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(45, 90, 140, 0.3);
+}
+h1 { font-size: 1.8rem; font-weight: 700; }
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.tab {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  background: white;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.tab.active {
+  background: #2d5a8c;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(45, 90, 140, 0.3);
+}
+.content { display: none; }
+.content.active { display: block; }
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+}
+.btn {
+  padding: 14px 20px;
+  background: #2d5a8c;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.2);
+  transition: all 0.3s ease;
+}
+.btn:active { 
+  background: #1e3d5f;
+  transform: scale(0.98);
+}
+input, select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e6ed;
+  border-radius: 10px;
+  font-size: 15px;
+  margin: 8px 0 15px 0;
+  transition: border 0.3s ease;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: #2d5a8c;
+}
+.upload-area {
+  border: 3px dashed #e0e6ed;
+  border-radius: 12px;
+  padding: 60px 20px;
+  text-align: center;
+  background: #f8f9fa;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+.upload-area:active {
+  background: #e8ecf1;
+  border-color: #2d5a8c;
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #2c3e50;
+}
+.category-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.badge-tv { background: #e74c3c; color: white; }
+.badge-news { background: #3498db; color: white; }
+.badge-web { background: #2ecc71; color: white; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔷 Azure8</h1>
+  <div style="font-size: 14px; margin-top: 5px; opacity: 0.9;">個人情報管理アプリ</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('list')">📋 一覧</button>
+  <button class="tab" onclick="showTab('add')">➕ 登録</button>
+</div>
+
+<div id="list" class="content active">
+  <div id="cards"></div>
+</div>
+
+<div id="add" class="content">
+  <div class="card">
+    <h3 style="margin-bottom: 20px; color: #2d5a8c; font-size: 18px;">📝 新規登録</h3>
+    <div class="upload-area" onclick="document.getElementById('file').click()">
+      <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
+      <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
+      <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">または写真を選択</div>
+      <input type="file" id="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
+    </div>
+    <div id="form" style="display:none; margin-top:25px">
+      <img id="preview" style="width:100%; border-radius:12px; margin-bottom:20px; box-shadow: 0 2px 15px rgba(0,0,0,0.1);">
+      
+      <label>📅 登録日（名刺交換日）</label>
+      <input type="date" id="date">
+      
+      <label>📂 カテゴリー</label>
+      <select id="category">
+        <option value="">選択してください</option>
+        <option value="TV">📺 TV</option>
+        <option value="新聞">📰 新聞</option>
+        <option value="WEB">🌐 WEB</option>
+      </select>
+      
+      <div id="programField" style="display:none;">
+        <label>📺 番組名</label>
+        <input type="text" id="program" placeholder="番組名を入力">
+      </div>
+      
+      <label>👤 名前</label>
+      <input type="text" id="name" placeholder="山田 太郎">
+      
+      <label>🏢 会社名・役職</label>
+      <input type="text" id="company" placeholder="株式会社〇〇 営業部">
+      
+      <label>📞 電話番号</label>
+      <input type="tel" id="phone" placeholder="03-1234-5678">
+      
+      <label>✉️ メールアドレス</label>
+      <input type="email" id="email" placeholder="example@company.com">
+      
+      <button class="btn" onclick="save()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('azure8') || '[]');
+
+document.getElementById('category').addEventListener('change', function() {
+  const programField = document.getElementById('programField');
+  programField.style.display = this.value === 'TV' ? 'block' : 'none';
+});
+
+function showTab(tab) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'list') display();
+}
+
+function handleFile(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('preview').src = e.target.result;
+      document.getElementById('form').style.display = 'block';
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function save() {
+  const name = document.getElementById('name').value;
+  const category = document.getElementById('category').value;
+  
+  if (!name || !category) {
+    alert('⚠️ 名前とカテゴリーは必須です');
+    return;
+  }
+  
+  const item = {
+    date: document.getElementById('date').value,
+    category: category,
+    program: document.getElementById('program').value,
+    name: name,
+    company: document.getElementById('company').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    image: document.getElementById('preview').src,
+    timestamp: new Date().getTime()
+  };
+  
+  data.push(item);
+  localStorage.setItem('azure8', JSON.stringify(data));
+  
+  alert('✅ 保存しました！');
+  
+  document.getElementById('form').style.display = 'none';
+  document.getElementById('file').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('company').value = '';
+  document.getElementById('phone').value = '';
+  document.getElementById('email').value = '';
+  document.getElementById('program').value = '';
+  document.getElementById('category').value = '';
+  
+  showTab('list');
+}
+
+function display() {
+  const cards = document.getElementById('cards');
+  
+  if (data.length === 0) {
+    cards.innerHTML = `
+      <div style="text-align:center; padding:80px 20px;">
+        <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;">📭</div>
+        <div style="color:#999; font-size:16px; font-weight: 500;">まだデータがありません</div>
+        <div style="color:#bbb; font-size:14px; margin-top: 10px;">「➕ 登録」から追加してください</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // あいうえお順にソート
+  data.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  
+  cards.innerHTML = data.map((item, i) => {
+    let badgeClass = '';
+    if (item.category === 'TV') badgeClass = 'badge-tv';
+    else if (item.category === '新聞') badgeClass = 'badge-news';
+    else if (item.category === 'WEB') badgeClass = 'badge-web';
+    
+    return `
+      <div class="card">
+        <span class="category-badge ${badgeClass}">${item.category}</span>
+        ${item.program ? `<div style="color: #f39c12; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📺 ${item.program}</div>` : ''}
+        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 5px;">${item.name}</div>
+        <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 10px;">${item.company || ''}</div>
+        ${item.date ? `<div style="color: #95a5a6; font-size: 13px; margin-bottom: 15px;">📅 ${item.date}</div>` : ''}
+        ${item.image ? `<img src="${item.image}" style="width:100%; margin:15px 0; border-radius:10px; box-shadow: 0 2px 15px rgba(0,0,0,0.1);">` : ''}
+        ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="display:block; text-decoration:none; text-align:center; margin:8px 0;">📞 ${item.phone}</a>` : ''}
+        ${item.email ? `<a href="mailto:${item.email}" class="btn" style="display:block; text-decoration:none; text-align:center; margin:8px 0; background:#27ae60;">✉️ ${item.email}</a>` : ''}
+        <button class="btn" style="background:#e74c3c; margin-top:15px;" onclick="del(${i})">🗑️ 削除</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function del(i) {
+  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
+    data.splice(i, 1);
+    localStorage.setItem('azure8', JSON.stringify(data));
+    display();
+    alert('✅ 削除しました');
+  }
+}
+
+display();
+</script>
+</body>
+</html>
