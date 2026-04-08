@@ -515,7 +515,6 @@ canvas { display: none; }
 </div>
 
 <script>
-// ⚙️ 設定（ここを変更してください）
 const ANTHROPIC_API_KEY = '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';
 const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbweKR_1OzDlDY5gEqjECKtnqJerBsYf2iNNIMQlS92uQIoV_XcB4G3IdpMaxaxMSpEVoQ/exec';
 
@@ -592,14 +591,13 @@ function capturePhoto() {
 }
 
 function showCropPreview() {
-  // 自動トリミング（中央60%部分を切り抜き）
   const img = new Image();
   img.onload = function() {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     
     const cropWidth = img.width * 0.8;
-    const cropHeight = cropWidth * 0.606; // 名刺比率
+    const cropHeight = cropWidth * 0.606;
     const cropX = (img.width - cropWidth) / 2;
     const cropY = (img.height - cropHeight) / 2;
     
@@ -730,7 +728,6 @@ async function saveCard() {
   }
   localStorage.setItem('azure8', JSON.stringify(data));
   
-  // Google Sheets に保存
   if (GOOGLE_SHEETS_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL') {
     try {
       await saveToGoogleSheets(item);
@@ -795,7 +792,7 @@ function display() {
   
   filteredData.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
   
-  cards.innerHTML = filteredData.map((item, i) => {
+  cards.innerHTML = filteredData.map((item) => {
     const originalIndex = data.indexOf(item);
     let badgeClass = '';
     if (item.category === 'TV') badgeClass = 'badge-tv';
@@ -804,4 +801,110 @@ function display() {
     else if (item.category === '雑誌') badgeClass = 'badge-magazine';
     else if (item.category === 'ラジオ') badgeClass = 'badge-radio';
     else if (item.category === 'Youtube') badgeClass = 'badge-youtube';
-    else if (item.category
+    else if (item.category === '専門誌') badgeClass = 'badge-journal';
+    
+    return `
+      <div class="card list-card" onclick="openDetail(${originalIndex})">
+        <span class="category-badge ${badgeClass}">${item.category}</span>
+        ${item.program ? `<div style="color: #f39c12; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📺 ${item.program}</div>` : ''}
+        ${item.media ? `<div style="color: #3498db; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📰 ${item.media}</div>` : ''}
+        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 5px;">${item.name}</div>
+        <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 10px;">${item.company || ''}</div>
+        ${item.date ? `<div style="color: #95a5a6; font-size: 13px;">📅 ${item.date}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function openDetail(i) {
+  const item = data[i];
+  editingIndex = i;
+  
+  document.getElementById('detailContent').innerHTML = `
+    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">` : ''}
+    
+    <label>📂 カテゴリー</label>
+    <select id="editCategory" onchange="document.getElementById('editProgramField').style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none'">
+      <option value="TV" ${item.category === 'TV' ? 'selected' : ''}>📺 TV</option>
+      <option value="新聞" ${item.category === '新聞' ? 'selected' : ''}>📰 新聞</option>
+      <option value="WEB" ${item.category === 'WEB' ? 'selected' : ''}>🌐 WEB</option>
+      <option value="雑誌" ${item.category === '雑誌' ? 'selected' : ''}>📖 雑誌</option>
+      <option value="ラジオ" ${item.category === 'ラジオ' ? 'selected' : ''}>📻 ラジオ</option>
+      <option value="Youtube" ${item.category === 'Youtube' ? 'selected' : ''}>▶️ Youtube</option>
+      <option value="専門誌" ${item.category === '専門誌' ? 'selected' : ''}>📚 専門誌</option>
+    </select>
+    
+    <div id="editProgramField" style="display:${(item.category === 'TV' || item.category === 'ラジオ' || item.category === 'Youtube') ? 'block' : 'none'};">
+      <label>📺 番組名</label>
+      <input type="text" id="editProgram" value="${item.program || ''}" placeholder="番組名を入力">
+    </div>
+    
+    <label>📰 媒体名</label>
+    <input type="text" id="editMedia" value="${item.media || ''}" placeholder="媒体名を入力">
+    
+    <label>📅 登録日</label>
+    <input type="date" id="editDate" value="${item.date}">
+    
+    <label>👤 名前</label>
+    <input type="text" id="editName" value="${item.name}">
+    
+    <label>🏢 会社名・役職</label>
+    <input type="text" id="editCompany" value="${item.company || ''}">
+    
+    <label>📞 電話番号</label>
+    <input type="tel" id="editPhone" value="${item.phone || ''}">
+    
+    <label>✉️ メールアドレス</label>
+    <input type="email" id="editEmail" value="${item.email || ''}">
+    
+    <label>📝 メモ</label>
+    <textarea id="editMemo">${item.memo || ''}</textarea>
+    
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px;">📞 電話</a>` : ''}
+      ${item.email ? `<a href="mailto:${item.email}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px; background:#27ae60;">✉️ メール</a>` : ''}
+    </div>
+    
+    <button class="btn" onclick="updateItem()">💾 更新</button>
+    <button class="btn" style="background:#e74c3c;" onclick="deleteItem(${i})">🗑️ 削除</button>
+  `;
+  
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function updateItem() {
+  const item = data[editingIndex];
+  
+  item.category = document.getElementById('editCategory').value;
+  item.program = document.getElementById('editProgram') ? document.getElementById('editProgram').value : '';
+  item.media = document.getElementById('editMedia').value;
+  item.date = document.getElementById('editDate').value;
+  item.name = document.getElementById('editName').value;
+  item.company = document.getElementById('editCompany').value;
+  item.phone = document.getElementById('editPhone').value;
+  item.email = document.getElementById('editEmail').value;
+  item.memo = document.getElementById('editMemo').value;
+  
+  localStorage.setItem('azure8', JSON.stringify(data));
+  alert('✅ 更新しました！');
+  closeModal();
+  display();
+}
+
+function deleteItem(i) {
+  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
+    data.splice(i, 1);
+    localStorage.setItem('azure8', JSON.stringify(data));
+    alert('✅ 削除しました');
+    closeModal();
+    display();
+  }
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('active');
+  editingIndex = -1;
+}
+</script>
+</body>
+</html>
