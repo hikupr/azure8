@@ -324,8 +324,6 @@ label {
   font-weight: 600;
 }
 canvas { display: none; }
-
-/* ジャンル選択画面 */
 .genre-select {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -356,6 +354,30 @@ canvas { display: none; }
   text-align: center;
   padding: 80px 20px;
 }
+.sheets-link {
+  display: block;
+  padding: 15px;
+  background: #27ae60;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(39, 174, 96, 0.3);
+  transition: all 0.3s ease;
+}
+.sheets-link:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+}
+.crop-preview {
+  width: 100%;
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
 </style>
 </head>
 <body>
@@ -371,6 +393,10 @@ canvas { display: none; }
 </div>
 
 <div id="list" class="content active">
+  <a href="https://docs.google.com/spreadsheets/d/15XO-aqOmiQHTaXp81tExFoD6pAZXCNFF65bnfW5l6Gg/edit?gid=0#gid=0" target="_blank" class="sheets-link">
+    📊 スプレッドシートを開く
+  </a>
+  
   <div id="genreSelect" class="genre-select">
     <button class="genre-btn" onclick="selectGenre('TV')">📺<br>TV</button>
     <button class="genre-btn" onclick="selectGenre('新聞')">📰<br>新聞</button>
@@ -395,6 +421,15 @@ canvas { display: none; }
       <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
       <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
       <div style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">名刺ガイド枠が表示されます</div>
+    </div>
+    
+    <div id="cropSection" style="display:none; margin-top:25px;">
+      <h4 style="margin-bottom: 15px; color: #2d5a8c;">✂️ 画像を調整</h4>
+      <img id="cropPreview" class="crop-preview">
+      <div style="display: flex; gap: 10px;">
+        <button class="btn" style="background:#27ae60; flex:1;" onclick="applyCrop()">✓ この画像で進む</button>
+        <button class="btn" style="background:#e67e22; flex:1;" onclick="retakePhoto()">📸 撮り直し</button>
+      </div>
     </div>
     
     <div id="form" style="display:none; margin-top:25px">
@@ -460,7 +495,7 @@ canvas { display: none; }
       </div>
       <div class="frame-instructions">
         📇 名刺を枠内に収めてください
-        <div class="frame-instructions-sub">枠に合わせて撮影するときれいに保存できます</div>
+        <div class="frame-instructions-sub">枠に合わせて撮影すると自動トリミングされます</div>
       </div>
     </div>
   </div>
@@ -481,12 +516,13 @@ canvas { display: none; }
 
 <script>
 // ⚙️ 設定（ここを変更してください）
-const ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE'; // ← Anthropic APIキーを入力
-const GOOGLE_SHEETS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // ← Google Apps Script URLを入力
+const ANTHROPIC_API_KEY = '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';
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbweKR_1OzDlDY5gEqjECKtnqJerBsYf2iNNIMQlS92uQIoV_XcB4G3IdpMaxaxMSpEVoQ/exec';
 
 let data = JSON.parse(localStorage.getItem('azure8') || '[]');
 let editingIndex = -1;
 let currentImageData = '';
+let rawImageData = '';
 let stream = null;
 let selectedGenre = null;
 
@@ -502,7 +538,6 @@ function showTab(tab) {
   event.target.classList.add('active');
   
   if (tab === 'list') {
-    // 一覧タブを開いたら、ジャンル選択画面に戻る
     backToGenreSelect();
   }
 }
@@ -523,7 +558,7 @@ function backToGenreSelect() {
 async function openCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' } 
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
     });
     document.getElementById('cameraVideo').srcObject = stream;
     document.getElementById('cameraFrame').classList.add('active');
@@ -550,9 +585,44 @@ function capturePhoto() {
   canvas.height = video.videoHeight;
   context.drawImage(video, 0, 0);
   
-  currentImageData = canvas.toDataURL('image/jpeg', 0.9);
+  rawImageData = canvas.toDataURL('image/jpeg', 0.95);
   
   closeCamera();
+  showCropPreview();
+}
+
+function showCropPreview() {
+  // 自動トリミング（中央60%部分を切り抜き）
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const cropWidth = img.width * 0.8;
+    const cropHeight = cropWidth * 0.606; // 名刺比率
+    const cropX = (img.width - cropWidth) / 2;
+    const cropY = (img.height - cropHeight) / 2;
+    
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    
+    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    
+    currentImageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    document.getElementById('cropPreview').src = currentImageData;
+    document.getElementById('cropSection').style.display = 'block';
+  };
+  img.src = rawImageData;
+}
+
+function retakePhoto() {
+  document.getElementById('cropSection').style.display = 'none';
+  openCamera();
+}
+
+function applyCrop() {
+  document.getElementById('cropSection').style.display = 'none';
   showForm();
 }
 
@@ -563,8 +633,13 @@ async function showForm() {
   
   if (ANTHROPIC_API_KEY !== 'YOUR_API_KEY_HERE') {
     document.getElementById('loading').style.display = 'block';
-    await performOCR();
-    document.getElementById('loading').style.display = 'none';
+    try {
+      await performOCR();
+    } catch (error) {
+      console.error('OCRエラー:', error);
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+    }
   }
 }
 
@@ -595,27 +670,32 @@ async function performOCR() {
             },
             {
               type: 'text',
-              text: 'この名刺画像から以下の情報を抽出してください。JSON形式で返答してください:\n{"name": "氏名", "company": "会社名・役職", "phone": "電話番号", "email": "メールアドレス"}\n見つからない項目は空文字にしてください。'
+              text: 'この名刺画像から以下の情報を抽出してください。JSON形式のみで返答してください（余計な説明は不要）:\n{"name": "氏名", "company": "会社名・役職", "phone": "電話番号", "email": "メールアドレス"}\n見つからない項目は空文字にしてください。'
             }
           ]
         }]
       })
     });
 
-    if (response.ok) {
-      const result = await response.json();
-      const text = result.content[0].text;
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const cardInfo = JSON.parse(jsonMatch[0]);
-        document.getElementById('name').value = cardInfo.name || '';
-        document.getElementById('company').value = cardInfo.company || '';
-        document.getElementById('phone').value = cardInfo.phone || '';
-        document.getElementById('email').value = cardInfo.email || '';
-      }
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const text = result.content[0].text;
+    const jsonMatch = text.match(/\{[\s\S]*?\}/);
+    
+    if (jsonMatch) {
+      const cardInfo = JSON.parse(jsonMatch[0]);
+      document.getElementById('name').value = cardInfo.name || '';
+      document.getElementById('company').value = cardInfo.company || '';
+      document.getElementById('phone').value = cardInfo.phone || '';
+      document.getElementById('email').value = cardInfo.email || '';
+      console.log('OCR成功:', cardInfo);
     }
   } catch (error) {
-    console.log('OCR処理をスキップしました:', error);
+    console.error('OCR処理エラー:', error);
+    alert('⚠️ 自動読み取りに失敗しました。手動で入力してください。');
   }
 }
 
@@ -652,7 +732,12 @@ async function saveCard() {
   
   // Google Sheets に保存
   if (GOOGLE_SHEETS_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL') {
-    await saveToGoogleSheets(item);
+    try {
+      await saveToGoogleSheets(item);
+      console.log('Google Sheets保存成功');
+    } catch (error) {
+      console.error('Google Sheets保存エラー:', error);
+    }
   }
   
   alert('✅ 保存しました！');
@@ -667,27 +752,26 @@ async function saveCard() {
   document.getElementById('media').value = '';
   document.getElementById('memo').value = '';
   currentImageData = '';
+  rawImageData = '';
   
   closeModal();
   showTab('list');
 }
 
 async function saveToGoogleSheets(item) {
-  try {
-    const response = await fetch(GOOGLE_SHEETS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-      body: JSON.stringify({
-        action: 'add',
-        data: item
-      })
-    });
-    console.log('Google Sheets保存完了');
-  } catch (error) {
-    console.error('Google Sheets保存エラー:', error);
-  }
+  const response = await fetch(GOOGLE_SHEETS_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      action: 'add',
+      data: JSON.stringify(item)
+    })
+  });
+  
+  return response;
 }
 
 function display() {
@@ -695,7 +779,6 @@ function display() {
   
   let filteredData = data;
   
-  // ジャンルでフィルター
   if (selectedGenre && selectedGenre !== 'all') {
     filteredData = data.filter(item => item.category === selectedGenre);
   }
@@ -721,110 +804,4 @@ function display() {
     else if (item.category === '雑誌') badgeClass = 'badge-magazine';
     else if (item.category === 'ラジオ') badgeClass = 'badge-radio';
     else if (item.category === 'Youtube') badgeClass = 'badge-youtube';
-    else if (item.category === '専門誌') badgeClass = 'badge-journal';
-    
-    return `
-      <div class="card list-card" onclick="openDetail(${originalIndex})">
-        <span class="category-badge ${badgeClass}">${item.category}</span>
-        ${item.program ? `<div style="color: #f39c12; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📺 ${item.program}</div>` : ''}
-        ${item.media ? `<div style="color: #3498db; font-size: 13px; font-weight: 600; margin-bottom: 8px;">📰 ${item.media}</div>` : ''}
-        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 5px;">${item.name}</div>
-        <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 10px;">${item.company || ''}</div>
-        ${item.date ? `<div style="color: #95a5a6; font-size: 13px;">📅 ${item.date}</div>` : ''}
-      </div>
-    `;
-  }).join('');
-}
-
-function openDetail(i) {
-  const item = data[i];
-  editingIndex = i;
-  
-  document.getElementById('detailContent').innerHTML = `
-    ${item.image ? `<img src="${item.image}" style="width:100%; border-radius:12px; margin-bottom:20px;">` : ''}
-    
-    <label>📂 カテゴリー</label>
-    <select id="editCategory" onchange="document.getElementById('editProgramField').style.display = (this.value === 'TV' || this.value === 'ラジオ' || this.value === 'Youtube') ? 'block' : 'none'">
-      <option value="TV" ${item.category === 'TV' ? 'selected' : ''}>📺 TV</option>
-      <option value="新聞" ${item.category === '新聞' ? 'selected' : ''}>📰 新聞</option>
-      <option value="WEB" ${item.category === 'WEB' ? 'selected' : ''}>🌐 WEB</option>
-      <option value="雑誌" ${item.category === '雑誌' ? 'selected' : ''}>📖 雑誌</option>
-      <option value="ラジオ" ${item.category === 'ラジオ' ? 'selected' : ''}>📻 ラジオ</option>
-      <option value="Youtube" ${item.category === 'Youtube' ? 'selected' : ''}>▶️ Youtube</option>
-      <option value="専門誌" ${item.category === '専門誌' ? 'selected' : ''}>📚 専門誌</option>
-    </select>
-    
-    <div id="editProgramField" style="display:${(item.category === 'TV' || item.category === 'ラジオ' || item.category === 'Youtube') ? 'block' : 'none'};">
-      <label>📺 番組名</label>
-      <input type="text" id="editProgram" value="${item.program || ''}" placeholder="番組名を入力">
-    </div>
-    
-    <label>📰 媒体名</label>
-    <input type="text" id="editMedia" value="${item.media || ''}" placeholder="媒体名を入力">
-    
-    <label>📅 登録日</label>
-    <input type="date" id="editDate" value="${item.date}">
-    
-    <label>👤 名前</label>
-    <input type="text" id="editName" value="${item.name}">
-    
-    <label>🏢 会社名・役職</label>
-    <input type="text" id="editCompany" value="${item.company || ''}">
-    
-    <label>📞 電話番号</label>
-    <input type="tel" id="editPhone" value="${item.phone || ''}">
-    
-    <label>✉️ メールアドレス</label>
-    <input type="email" id="editEmail" value="${item.email || ''}">
-    
-    <label>📝 メモ</label>
-    <textarea id="editMemo">${item.memo || ''}</textarea>
-    
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      ${item.phone ? `<a href="tel:${item.phone}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px;">📞 電話</a>` : ''}
-      ${item.email ? `<a href="mailto:${item.email}" class="btn" style="flex:1; text-decoration:none; text-align:center; padding:14px; background:#27ae60;">✉️ メール</a>` : ''}
-    </div>
-    
-    <button class="btn" onclick="updateItem()">💾 更新</button>
-    <button class="btn" style="background:#e74c3c;" onclick="deleteItem(${i})">🗑️ 削除</button>
-  `;
-  
-  document.getElementById('detailModal').classList.add('active');
-}
-
-function updateItem() {
-  const item = data[editingIndex];
-  
-  item.category = document.getElementById('editCategory').value;
-  item.program = document.getElementById('editProgram') ? document.getElementById('editProgram').value : '';
-  item.media = document.getElementById('editMedia').value;
-  item.date = document.getElementById('editDate').value;
-  item.name = document.getElementById('editName').value;
-  item.company = document.getElementById('editCompany').value;
-  item.phone = document.getElementById('editPhone').value;
-  item.email = document.getElementById('editEmail').value;
-  item.memo = document.getElementById('editMemo').value;
-  
-  localStorage.setItem('azure8', JSON.stringify(data));
-  alert('✅ 更新しました！');
-  closeModal();
-  display();
-}
-
-function deleteItem(i) {
-  if (confirm('❓ 本当に削除しますか？\nこの操作は取り消せません。')) {
-    data.splice(i, 1);
-    localStorage.setItem('azure8', JSON.stringify(data));
-    alert('✅ 削除しました');
-    closeModal();
-    display();
-  }
-}
-
-function closeModal() {
-  document.getElementById('detailModal').classList.remove('active');
-  editingIndex = -1;
-}
-</script>
-</body>
-</html>
+    else if (item.category
