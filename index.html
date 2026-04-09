@@ -23,13 +23,13 @@ body {
 }
 h1 { font-size: 1.8rem; font-weight: 700; }
 .tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
 .tab {
-  flex: 1;
-  padding: 14px;
+  padding: 18px;
   border: none;
   background: white;
   border-radius: 10px;
@@ -38,12 +38,17 @@ h1 { font-size: 1.8rem; font-weight: 700; }
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   font-weight: 600;
   transition: all 0.3s ease;
+  text-align: center;
 }
-.tab.active {
-  background: #2d5a8c;
+.tab:active {
+  transform: scale(0.98);
+}
+.sheets-tab {
+  background: #27ae60;
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(45, 90, 140, 0.3);
+}
+.sheets-tab:active {
+  background: #229954;
 }
 .content { display: none; }
 .content.active { display: block; }
@@ -328,7 +333,7 @@ canvas { display: none; }
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
-  padding: 20px;
+  margin-bottom: 20px;
 }
 .genre-btn {
   padding: 30px 20px;
@@ -350,27 +355,14 @@ canvas { display: none; }
 .genre-btn:active {
   transform: scale(0.98);
 }
+.genre-btn.active {
+  background: #2d5a8c;
+  color: white;
+  border-color: #2d5a8c;
+}
 .empty-state {
   text-align: center;
   padding: 80px 20px;
-}
-.sheets-link {
-  display: block;
-  padding: 15px;
-  background: #27ae60;
-  color: white;
-  text-decoration: none;
-  border-radius: 10px;
-  text-align: center;
-  font-weight: 600;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(39, 174, 96, 0.3);
-  transition: all 0.3s ease;
-}
-.sheets-link:hover {
-  background: #229954;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
 }
 .crop-preview {
   width: 100%;
@@ -388,30 +380,27 @@ canvas { display: none; }
 </div>
 
 <div class="tabs">
-  <button class="tab active" onclick="showTab('list')">📋 一覧</button>
+  <button class="tab" onclick="showTab('list')">📋 一覧</button>
   <button class="tab" onclick="showTab('add')">➕ 登録</button>
+  <button class="tab sheets-tab" onclick="openSheets()">📊 シート</button>
 </div>
 
 <div id="list" class="content active">
-  <a href="https://docs.google.com/spreadsheets/d/15XO-aqOmiQHTaXp81tExFoD6pAZXCNFF65bnfW5l6Gg/edit?gid=0#gid=0" target="_blank" class="sheets-link">
-    📊 スプレッドシートを開く
-  </a>
-  
-  <div id="genreSelect" class="genre-select">
-    <button class="genre-btn" onclick="selectGenre('TV')">📺<br>TV</button>
-    <button class="genre-btn" onclick="selectGenre('新聞')">📰<br>新聞</button>
-    <button class="genre-btn" onclick="selectGenre('WEB')">🌐<br>WEB</button>
-    <button class="genre-btn" onclick="selectGenre('雑誌')">📖<br>雑誌</button>
-    <button class="genre-btn" onclick="selectGenre('ラジオ')">📻<br>ラジオ</button>
-    <button class="genre-btn" onclick="selectGenre('Youtube')">▶️<br>Youtube</button>
-    <button class="genre-btn" onclick="selectGenre('専門誌')">📚<br>専門誌</button>
-    <button class="genre-btn" onclick="selectGenre('all')" style="grid-column: 1 / -1;">🔍<br>全て表示</button>
+  <div class="card">
+    <h3 style="margin-bottom: 15px; color: #2d5a8c; font-size: 18px;">📂 ジャンル選択</h3>
+    <div class="genre-select">
+      <button class="genre-btn" onclick="selectGenre('TV')">📺<br>TV</button>
+      <button class="genre-btn" onclick="selectGenre('新聞')">📰<br>新聞</button>
+      <button class="genre-btn" onclick="selectGenre('WEB')">🌐<br>WEB</button>
+      <button class="genre-btn" onclick="selectGenre('雑誌')">📖<br>雑誌</button>
+      <button class="genre-btn" onclick="selectGenre('ラジオ')">📻<br>ラジオ</button>
+      <button class="genre-btn" onclick="selectGenre('Youtube')">▶️<br>Youtube</button>
+      <button class="genre-btn" onclick="selectGenre('専門誌')">📚<br>専門誌</button>
+      <button class="genre-btn" onclick="selectGenre('all')" style="grid-column: 1 / -1;">🔍<br>全て表示</button>
+    </div>
   </div>
   
-  <div id="cardsSection" style="display:none;">
-    <button class="btn" onclick="backToGenreSelect()" style="background:#95a5a6; margin-bottom:20px;">← ジャンル選択に戻る</button>
-    <div id="cards"></div>
-  </div>
+  <div id="cards"></div>
 </div>
 
 <div id="add" class="content">
@@ -436,6 +425,7 @@ canvas { display: none; }
       <div id="loading" class="loading" style="display:none;">
         <div style="font-size: 40px; margin-bottom: 10px;">🤖</div>
         <div>AI が名刺を読み取り中...</div>
+        <div style="font-size: 13px; margin-top: 10px; color: #7f8c8d;">最大30秒かかります</div>
       </div>
       
       <img id="preview" style="width:100%; border-radius:12px; margin-bottom:20px; box-shadow: 0 2px 15px rgba(0,0,0,0.1);">
@@ -463,13 +453,13 @@ canvas { display: none; }
       <label>📰 媒体名</label>
       <input type="text" id="media" placeholder="日本経済新聞、TBS NEWS DIG など">
       
-      <label>👤 名前</label>
+      <label>👤 担当者名</label>
       <input type="text" id="name" placeholder="山田 太郎">
       
-      <label>🏢 会社名・役職</label>
+      <label>🏢 企業名・役職</label>
       <input type="text" id="company" placeholder="株式会社〇〇 営業部">
       
-      <label>📞 電話番号</label>
+      <label>📞 携帯番号</label>
       <input type="tel" id="phone" placeholder="090-1234-5678">
       
       <label>✉️ メールアドレス</label>
@@ -515,8 +505,9 @@ canvas { display: none; }
 </div>
 
 <script>
-const ANTHROPIC_API_KEY = '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';
-const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZuWeycez8QeNvLNJ0YOfl5yqwiLo9zL_PhzMrP1Tes6MNpFGoVBSprHyRacHAeKmEkg/exec';
+const ANTHROPIC_API_KEY = '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';
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxucOILgyD69g63wlPTBcmURnkMQ9AVyWvmEeX5c6aC3dItooGu8B__SqxUvqR_AhJnxQ/exec';
+const SPREADSHEET_ID = '15XO-aqOmiQHTaXp81tExFoD6pAZXCNFF65bnfW5l6Gg';
 
 let data = JSON.parse(localStorage.getItem('azure8') || '[]');
 let editingIndex = -1;
@@ -532,26 +523,24 @@ document.getElementById('category').addEventListener('change', function() {
 
 function showTab(tab) {
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
-  event.target.classList.add('active');
   
   if (tab === 'list') {
-    backToGenreSelect();
+    selectedGenre = null;
+    document.querySelectorAll('.genre-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('cards').innerHTML = '';
   }
+}
+
+function openSheets() {
+  window.open('https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit', '_blank');
 }
 
 function selectGenre(genre) {
   selectedGenre = genre;
-  document.getElementById('genreSelect').style.display = 'none';
-  document.getElementById('cardsSection').style.display = 'block';
+  document.querySelectorAll('.genre-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
   display();
-}
-
-function backToGenreSelect() {
-  selectedGenre = null;
-  document.getElementById('genreSelect').style.display = 'grid';
-  document.getElementById('cardsSection').style.display = 'none';
 }
 
 async function openCamera() {
@@ -629,21 +618,35 @@ async function showForm() {
   document.getElementById('form').style.display = 'block';
   document.getElementById('date').value = new Date().toISOString().split('T')[0];
   
-  document.getElementById('loading').style.display = 'block';
-  try {
-    await performOCR();
-  } catch (error) {
-    console.error('OCRエラー:', error);
-    alert('⚠️ 自動読み取りに失敗しました\n\nエラー: ' + error.message + '\n\n手動で入力してください');
-  } finally {
-    document.getElementById('loading').style.display = 'none';
+  const useOCR = confirm('🤖 AI で名刺を自動読み取りしますか？\n\n（10〜30秒かかります）\n\nOK = 自動読み取り\nキャンセル = 手動入力');
+  
+  if (useOCR) {
+    document.getElementById('loading').style.display = 'block';
+    try {
+      await performOCR();
+      alert('✅ 自動読み取り完了！');
+    } catch (error) {
+      console.error('OCRエラー詳細:', error);
+      alert('⚠️ 自動読み取りに失敗しました\n\nエラー: ' + error.message + '\n\n手動で入力してください');
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+    }
   }
 }
 
 async function performOCR() {
+  console.log('=== OCR開始 ===');
+  const base64Image = currentImageData.split(',')[1];
+  console.log('画像サイズ:', base64Image.length, '文字');
+  
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    console.log('タイムアウト発生');
+    controller.abort();
+  }, 30000);
+  
   try {
-    const base64Image = currentImageData.split(',')[1];
-    
+    console.log('APIリクエスト送信中...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -667,30 +670,51 @@ async function performOCR() {
             },
             {
               type: 'text',
-              text: 'この名刺画像から以下の情報を抽出してください。JSON形式のみで返答してください:\n{"name": "氏名", "company": "会社名・役職", "phone": "電話番号", "email": "メールアドレス"}\n見つからない項目は空文字にしてください。'
+              text: 'この名刺画像から情報を抽出してJSON形式で返してください:\n{"name": "氏名", "company": "会社名・役職", "phone": "電話番号", "email": "メールアドレス"}\n見つからない項目は空文字にしてください。'
             }
           ]
         }]
-      })
+      }),
+      signal: controller.signal
     });
-
+    
+    clearTimeout(timeout);
+    console.log('APIレスポンス受信:', response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`API Error ${response.status}`);
+      console.error('APIエラー詳細:', errorText);
+      throw new Error(`API Error ${response.status}: ${errorText}`);
     }
-
+    
     const result = await response.json();
+    console.log('API結果:', result);
+    
     const text = result.content[0].text;
+    console.log('抽出テキスト:', text);
+    
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     
     if (jsonMatch) {
       const cardInfo = JSON.parse(jsonMatch[0]);
+      console.log('パースされた情報:', cardInfo);
+      
       document.getElementById('name').value = cardInfo.name || '';
       document.getElementById('company').value = cardInfo.company || '';
       document.getElementById('phone').value = cardInfo.phone || '';
       document.getElementById('email').value = cardInfo.email || '';
+      
+      console.log('=== OCR成功 ===');
+    } else {
+      console.error('JSON形式が見つかりませんでした');
+      throw new Error('JSON形式が見つかりませんでした');
     }
   } catch (error) {
+    clearTimeout(timeout);
+    if (error.name === 'AbortError') {
+      throw new Error('タイムアウト（30秒超過）');
+    }
+    console.error('=== OCR失敗 ===', error);
     throw error;
   }
 }
@@ -700,7 +724,7 @@ async function saveCard() {
   const category = document.getElementById('category').value;
   
   if (!name || !category) {
-    alert('⚠️ 名前とカテゴリーは必須です');
+    alert('⚠️ 担当者名とカテゴリーは必須です');
     return;
   }
   
@@ -718,6 +742,9 @@ async function saveCard() {
     timestamp: new Date().getTime()
   };
   
+  console.log('=== 保存開始 ===');
+  console.log('保存データ:', item);
+  
   if (editingIndex >= 0) {
     data[editingIndex] = item;
     editingIndex = -1;
@@ -725,13 +752,22 @@ async function saveCard() {
     data.push(item);
   }
   localStorage.setItem('azure8', JSON.stringify(data));
+  console.log('ローカルストレージ保存完了');
   
+  let sheetsSuccess = false;
   try {
+    console.log('Google Sheets保存開始...');
     await saveToGoogleSheets(item);
-    alert('✅ 保存しました！\n\n✓ ローカル\n✓ スプレッドシート');
+    sheetsSuccess = true;
+    console.log('Google Sheets保存成功');
   } catch (error) {
     console.error('Google Sheets保存エラー:', error);
-    alert('✅ ローカルに保存しました\n\n⚠️ スプレッドシート保存失敗');
+  }
+  
+  if (sheetsSuccess) {
+    alert('✅ 保存完了！\n\n✓ ローカル\n✓ スプレッドシート');
+  } else {
+    alert('✅ ローカルに保存しました\n\n⚠️ スプレッドシート保存失敗\n（コンソールログを確認してください）');
   }
   
   document.getElementById('form').style.display = 'none';
@@ -751,9 +787,14 @@ async function saveCard() {
 }
 
 async function saveToGoogleSheets(item) {
+  console.log('送信データ:', item);
+  
   const formData = new URLSearchParams();
   formData.append('action', 'add');
   formData.append('data', JSON.stringify(item));
+  
+  console.log('送信URL:', GOOGLE_SHEETS_URL);
+  console.log('送信フォーム:', formData.toString());
   
   const response = await fetch(GOOGLE_SHEETS_URL, {
     method: 'POST',
@@ -763,15 +804,31 @@ async function saveToGoogleSheets(item) {
     body: formData
   });
   
+  console.log('レスポンス:', response);
+  console.log('ステータス:', response.status);
+  console.log('タイプ:', response.type);
+  
+  if (!response.ok && response.type !== 'opaque') {
+    const errorText = await response.text();
+    console.error('エラーレスポンス:', errorText);
+    throw new Error('保存失敗: ' + errorText);
+  }
+  
+  console.log('fetch完了');
   return response;
 }
 
 function display() {
   const cards = document.getElementById('cards');
   
+  if (!selectedGenre) {
+    cards.innerHTML = '';
+    return;
+  }
+  
   let filteredData = data;
   
-  if (selectedGenre && selectedGenre !== 'all') {
+  if (selectedGenre !== 'all') {
     filteredData = data.filter(item => item.category === selectedGenre);
   }
   
@@ -840,13 +897,13 @@ function openDetail(i) {
     <label>📅 登録日</label>
     <input type="date" id="editDate" value="${item.date}">
     
-    <label>👤 名前</label>
+    <label>👤 担当者名</label>
     <input type="text" id="editName" value="${item.name}">
     
-    <label>🏢 会社名・役職</label>
+    <label>🏢 企業名・役職</label>
     <input type="text" id="editCompany" value="${item.company || ''}">
     
-    <label>📞 電話番号</label>
+    <label>📞 携帯番号</label>
     <input type="tel" id="editPhone" value="${item.phone || ''}">
     
     <label>✉️ メールアドレス</label>
