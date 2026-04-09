@@ -509,7 +509,6 @@ let selectedGenre = null;
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
   console.error('エラー発生:', msg, 'at', lineNo);
-  alert('エラーが発生しました: ' + msg);
   return false;
 };
 
@@ -544,7 +543,6 @@ function showTab(tab) {
     }
   } catch(e) {
     console.error('showTab error:', e);
-    alert('エラー: ' + e.message);
   }
 }
 
@@ -567,7 +565,6 @@ function selectGenre(genre) {
     display();
   } catch(e) {
     console.error('selectGenre error:', e);
-    alert('エラー: ' + e.message);
   }
 }
 
@@ -658,6 +655,36 @@ function applyCrop() {
   }
 }
 
+function compressImage(base64, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      
+      let width = img.width;
+      let height = img.height;
+      const maxWidth = 600;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      console.log('元サイズ:', base64.length, '→ 圧縮後:', compressed.length);
+      resolve(compressed);
+    };
+    img.onerror = reject;
+    img.src = base64;
+  });
+}
+
 async function saveCard() {
   try {
     console.log('=== 保存開始 ===');
@@ -673,6 +700,17 @@ async function saveCard() {
       return;
     }
     
+    let compressedImage = '';
+    if (currentImageData) {
+      try {
+        compressedImage = await compressImage(currentImageData, 0.3);
+        console.log('画像圧縮完了');
+      } catch(e) {
+        console.warn('画像圧縮失敗、画像なしで保存:', e);
+        compressedImage = '';
+      }
+    }
+    
     const item = {
       date: document.getElementById('date').value,
       category: category || '未分類',
@@ -683,15 +721,24 @@ async function saveCard() {
       phone: document.getElementById('phone').value,
       email: document.getElementById('email').value,
       memo: document.getElementById('memo').value,
-      image: currentImageData,
+      image: compressedImage,
       timestamp: new Date().getTime()
     };
     
-    console.log('保存データ:', item);
+    console.log('保存データサイズ:', JSON.stringify(item).length);
     
     data.push(item);
-    localStorage.setItem('azure8', JSON.stringify(data));
-    console.log('ローカル保存完了');
+    
+    try {
+      localStorage.setItem('azure8', JSON.stringify(data));
+      console.log('ローカル保存完了');
+    } catch(storageError) {
+      console.error('LocalStorage保存エラー:', storageError);
+      alert('⚠️ 保存容量オーバー\n\n画像なしで保存します');
+      item.image = '';
+      data[data.length - 1] = item;
+      localStorage.setItem('azure8', JSON.stringify(data));
+    }
     
     let sheetsSuccess = false;
     try {
@@ -707,7 +754,6 @@ async function saveCard() {
       alert('✅ ローカルに保存しました\n\n⚠️ スプレッドシート保存は失敗しました');
     }
     
-    // フォームをリセット
     document.getElementById('form').style.display = 'none';
     document.getElementById('cropSection').style.display = 'none';
     document.getElementById('name').value = '';
@@ -860,7 +906,6 @@ function openDetail(i) {
     document.getElementById('detailModal').classList.add('active');
   } catch(e) {
     console.error('openDetail error:', e);
-    alert('エラー: ' + e.message);
   }
 }
 
@@ -899,7 +944,6 @@ function deleteItem(i) {
     }
   } catch(e) {
     console.error('deleteItem error:', e);
-    alert('エラー: ' + e.message);
   }
 }
 
