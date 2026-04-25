@@ -481,24 +481,7 @@ async function saveCard() {
   showTab('list');
 }
 
-async function saveToSheets(item) {
-  console.log('=== シート保存開始 ===');
-  console.log('送信データ:', item);
-  
-  const fd = new URLSearchParams();
-  fd.append('data', JSON.stringify(item));
-  
-  const res = await fetch(SHEETS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: fd,
-    mode: 'no-cors'
-  });
-  
-  console.log('レスポンス type:', res.type);
-  // no-corsモードでは常にopaqueになるため、エラーは投げない
-  return true;
-}
+async function saveToSheets(item)
 
 function compressImage(base64, quality) {
   return new Promise((resolve) => {
