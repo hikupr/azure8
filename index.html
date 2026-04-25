@@ -11,6 +11,8 @@ body {
   background: #f5f7fa;
   padding: 15px;
   min-height: 100vh;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .header {
   background: #2d5a8c;
@@ -35,6 +37,7 @@ h1 { font-size: 1.5rem; }
   font-size: 15px;
   cursor: pointer;
   font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
   background: #2d5a8c;
@@ -52,6 +55,7 @@ h1 { font-size: 1.5rem; }
 .card-clickable {
   cursor: pointer;
   transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .card-clickable:active {
   transform: scale(0.98);
@@ -67,6 +71,8 @@ h1 { font-size: 1.5rem; }
   width: 100%;
   margin-top: 10px;
   font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn:active {
   background: #1e3d5f;
@@ -88,6 +94,8 @@ input, select, textarea {
   font-size: 15px;
   margin: 8px 0 15px 0;
   font-family: inherit;
+  -webkit-user-select: text;
+  user-select: text;
 }
 textarea {
   min-height: 80px;
@@ -108,6 +116,8 @@ label {
   background: #f8f9fa;
   cursor: pointer;
   margin-bottom: 20px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .camera-area:active {
   background: #e8ecf1;
@@ -137,6 +147,7 @@ label {
   font-size: 30px;
   cursor: pointer;
   float: right;
+  -webkit-tap-highlight-color: transparent;
 }
 .camera-frame {
   display: none;
@@ -145,7 +156,7 @@ label {
   left: 0;
   width: 100%;
   height: 100%;
-  background: #000;
+  background: rgba(0, 0, 0, 0.9);
   z-index: 2000;
 }
 .camera-frame.active {
@@ -154,37 +165,130 @@ label {
   align-items: center;
   justify-content: center;
 }
-#cameraVideo {
+.camera-container {
+  position: relative;
   width: 100%;
-  max-height: 70vh;
-  object-fit: contain;
-}
-.camera-controls {
-  position: fixed;
-  bottom: 30px;
-  left: 0;
-  right: 0;
+  height: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 20px;
 }
-.capture-btn {
+#cameraVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frame-overlay {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  z-index: 2001;
+  pointer-events: none;
+}
+.card-guide {
+  position: relative;
+  width: 100%;
+  padding-top: 60.6%;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  background: transparent;
+}
+.corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 4px solid #f39c12;
+}
+.corner-tl {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 12px;
+}
+.corner-tr {
+  top: -3px;
+  right: -3px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 12px;
+}
+.corner-bl {
+  bottom: -3px;
+  left: -3px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+}
+.corner-br {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 12px;
+}
+.frame-instructions {
+  color: white;
+  text-align: center;
+  margin-top: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 2002;
+  position: relative;
+}
+.capture-button {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 70px;
   height: 70px;
   border-radius: 50%;
   background: white;
   border: 5px solid #f39c12;
   cursor: pointer;
+  z-index: 2003;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-.close-btn {
+.capture-button:active {
+  transform: translateX(-50%) scale(0.95);
+}
+.capture-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.3);
+  background: #f39c12;
+}
+.close-frame {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
   border: 2px solid white;
+  border-radius: 50%;
   color: white;
   font-size: 24px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2004;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 canvas { display: none; }
 .preview-img {
@@ -213,7 +317,7 @@ canvas { display: none; }
 <div id="add" class="content active">
   <div class="card">
     <h3 style="margin-bottom: 15px;">📸 名刺撮影</h3>
-    <div class="camera-area" onclick="openCamera()">
+    <div class="camera-area" id="cameraArea">
       <div style="font-size: 40px; margin-bottom: 10px;">📷</div>
       <div style="font-weight: 600; color: #2d5a8c;">タップして撮影</div>
     </div>
@@ -274,17 +378,28 @@ canvas { display: none; }
 </div>
 
 <div id="cameraFrame" class="camera-frame">
-  <video id="cameraVideo" autoplay playsinline></video>
-  <div class="camera-controls">
-    <button class="close-btn" onclick="closeCamera()">×</button>
-    <button class="capture-btn" onclick="capturePhoto()"></button>
+  <div class="camera-container">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <div class="frame-overlay">
+      <div class="card-guide">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+      </div>
+      <div class="frame-instructions">
+        📇 名刺を枠内に収めてください
+      </div>
+    </div>
   </div>
+  <button class="close-frame" id="closeFrameBtn">&times;</button>
+  <button class="capture-button" id="captureBtn"></button>
 </div>
 <canvas id="canvas"></canvas>
 
 <div id="detailModal" class="modal">
   <div class="modal-content">
-    <button class="modal-close" onclick="closeModal()">×</button>
+    <button class="modal-close" onclick="closeModal()">&times;</button>
     <div id="detailContent"></div>
   </div>
 </div>
@@ -299,6 +414,13 @@ let currentImage = '';
 let stream = null;
 let editingIndex = -1;
 
+// イベントリスナーを設定
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('cameraArea').addEventListener('click', openCamera);
+  document.getElementById('closeFrameBtn').addEventListener('click', closeCamera);
+  document.getElementById('captureBtn').addEventListener('click', capturePhoto);
+});
+
 // ========== タブ切替 ==========
 function showTab(tab) {
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -311,18 +433,22 @@ function showTab(tab) {
 
 // ========== カメラ ==========
 async function openCamera() {
+  console.log('カメラを開く');
   try {
     stream = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' } 
     });
     document.getElementById('cameraVideo').srcObject = stream;
     document.getElementById('cameraFrame').classList.add('active');
+    console.log('カメラ起動成功');
   } catch (e) {
+    console.error('カメラエラー:', e);
     alert('カメラアクセスエラー: ' + e.message);
   }
 }
 
 function closeCamera() {
+  console.log('カメラを閉じる');
   if (stream) {
     stream.getTracks().forEach(t => t.stop());
     stream = null;
@@ -331,6 +457,7 @@ function closeCamera() {
 }
 
 function capturePhoto() {
+  console.log('撮影');
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
@@ -467,13 +594,12 @@ async function saveCard() {
     localStorage.setItem('azure8', JSON.stringify(data));
   }
   
-  // スプレッドシート保存（常に成功として扱う）
-  try {
-    await saveToSheets(item);
-    alert('✅ 保存完了！\n\nローカル ✓\nスプレッドシート送信 ✓\n\n※念のためスプレッドシートを確認してください');
-  } catch(e) {
-    console.error('Sheets error:', e);
-    alert('✅ ローカル保存完了\n⚠️ シート保存エラー\n\nエラー: ' + e.message);
+  const sheetsResult = await saveToSheets(item);
+  
+  if (sheetsResult.success) {
+    alert('✅ 保存完了！\n\nローカル ✓\nスプレッドシート ✓');
+  } else {
+    alert('✅ ローカル保存完了\n\n⚠️ スプレッドシート保存エラー\n\n' + sheetsResult.error);
   }
   
   resetForm();
@@ -481,7 +607,49 @@ async function saveCard() {
   showTab('list');
 }
 
-async function saveToSheets(item)
+async function saveToSheets(item) {
+  try {
+    console.log('=== スプレッドシート保存開始 ===');
+    console.log('URL:', SHEETS_URL);
+    console.log('データ:', item);
+    
+    const formData = new URLSearchParams();
+    formData.append('data', JSON.stringify(item));
+    
+    console.log('送信データ:', formData.toString());
+    
+    const response = await fetch(SHEETS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString()
+    });
+    
+    console.log('レスポンス status:', response.status);
+    
+    const text = await response.text();
+    console.log('レスポンス body:', text);
+    
+    try {
+      const result = JSON.parse(text);
+      console.log('パース結果:', result);
+      
+      if (result.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: result.error || '不明なエラー' };
+      }
+    } catch (e) {
+      console.error('JSON パースエラー:', e);
+      return { success: false, error: 'レスポンスの解析に失敗: ' + text };
+    }
+    
+  } catch (error) {
+    console.error('スプレッドシート保存エラー:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 function compressImage(base64, quality) {
   return new Promise((resolve) => {
